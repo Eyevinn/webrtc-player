@@ -1,0 +1,8 @@
+dist
+umd_dist
+node_modules
+.parcel-cache
+.DS_Store
+lerna-debug.log
+.vscode/settings.json
+.vscode/extensions.json
