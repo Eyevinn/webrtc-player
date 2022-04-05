@@ -4,7 +4,6 @@
   "description": "WebRTC (recvonly) player",
   "source": "src/index.ts",
   "main": "dist/main.js",
-  "module": "dist/module.js",
   "types": "dist/types.d.ts",
   "scripts": {
     "dev": "parcel --host 0.0.0.0 src/demo.html --no-cache",
