@@ -1,6 +1,6 @@
 {
   "name": "@eyevinn/webrtc-player",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "WebRTC (recvonly) player",
   "source": "src/index.ts",
   "main": "dist/main.js",
