@@ -25,7 +25,7 @@ npm install @eyevinn/webrtc-player
 {
   video: HTMLVideoElement;
   type: string; // type of adapter (see below for a list of included adapters below)
-  adapter: BaseAdapter; // provide a custom adapter, type is "custom"
+  adapterFactory: AdapterFactoryFunction; // provide a custom adapter factory when adapter type is "custom"
 }
 ```
 
