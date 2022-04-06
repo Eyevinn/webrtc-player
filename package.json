@@ -6,7 +6,7 @@
   "main": "dist/main.js",
   "types": "dist/types.d.ts",
   "scripts": {
-    "dev": "parcel --host 0.0.0.0 --no-cache src/demo.html",
+    "dev": "parcel --host 0.0.0.0 --port 2345 --no-cache demo/demo.html",
     "build": "parcel build",
     "postversion": "git push && git push --tags",
     "test": "echo \"Error: no test specified\" && exit 1"

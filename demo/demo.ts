@@ -1,4 +1,4 @@
-import { WebRTCPlayer } from ".";
+import { WebRTCPlayer } from "../src/index";
 
 const BROADCASTER_URL = process.env.BROADCASTER_URL || "https://broadcaster-wrtc.prod.eyevinn.technology/broadcaster";
 
@@ -38,6 +38,5 @@ window.addEventListener("DOMContentLoaded", async () => {
     const channelUrl = input.value;
     const player = new WebRTCPlayer({ video: video, type: "se.eyevinn.webrtc", iceServers: iceServers });
     await player.load(new URL(channelUrl));
-    player.unmute();
   });
 });
