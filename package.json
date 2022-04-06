@@ -6,12 +6,17 @@
   "main": "dist/main.js",
   "types": "dist/types.d.ts",
   "scripts": {
-    "dev": "parcel --host 0.0.0.0 src/demo.html --no-cache",
+    "dev": "parcel --host 0.0.0.0 --no-cache src/demo.html",
     "build": "parcel build",
+    "postversion": "git push && git push --tags",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "Eyevinn Technology AB <work@eyevinn.se>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Eyevinn/webrtc-player.git"
+  },
   "devDependencies": {
     "@parcel/packager-ts": "^2.4.1",
     "@parcel/transformer-typescript-types": "^2.4.1",

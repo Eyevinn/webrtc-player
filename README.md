@@ -1,6 +1,12 @@
 # webrtc-player
 
-WebRTC player for recvonly streams.
+WebRTC player for recvonly WebRTC streams.
+
+## Installation
+
+```
+npm install @eyevinn/webrtc-player
+```
 
 ## Usage
 
@@ -13,10 +19,32 @@ WebRTC player for recvonly streams.
   player.unmute();
 ```
 
+## Options
+
+```
+{
+  video: HTMLVideoElement;
+  type: string; // type of adapter (see below for a list of available types)
+}
+```
+
 ## Adapters
 
-As SDP negotiation is WebRTC media server specific this player includes adapters for various types of WebRTC media servers.
+As SDP exchange is WebRTC media server specific this player includes adapters for various types of WebRTC media servers. 
 
-### se.eyevinn.webrtc
+### `se.eyevinn.webrtc`
 
-Compatible with WebRTC media servers in WHIP project.
+Compatible with WebRTC media servers in [Eyevinn WHIP](https://github.com/Eyevinn/whip) project. Implements the following SDP exchange protocol:
+
+1. WebRTC player (client) creates an SDP offer.
+2. Client awaits ICE candidate selection to be completed.
+3. Sends an updated local SDP in a JSON `{ sdp: <localSdp> }` to the server using HTTP POST to the specified `channelUrl`.
+4. Server responds with a JSON `{ sdp: <remoteSdp> } ` containing the remote SDP.
+
+# About Eyevinn Technology
+
+Eyevinn Technology is an independent consultant firm specialized in video and streaming. Independent in a way that we are not commercially tied to any platform or technology vendor.
+
+At Eyevinn, every software developer consultant has a dedicated budget reserved for open source development and contribution to the open source community. This give us room for innovation, team building and personal competence development. And also gives us as a company a way to contribute back to the open source community.
+
+Want to know more about Eyevinn and how it is to work here. Contact us at work@eyevinn.se!
