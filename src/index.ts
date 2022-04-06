@@ -2,7 +2,6 @@ import { BaseAdapter } from "./adapters/base";
 import { AdapterFactory, AdapterFactoryFunction } from "./adapters/factory";
 
 export { BaseAdapter } from "./adapters/base";
-export { AdapterFactoryFunction } from "./adapters/factory";
 
 interface WebRTCPlayerOptions {
   video: HTMLVideoElement;

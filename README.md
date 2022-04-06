@@ -47,7 +47,7 @@ Compatible with WebRTC media servers in [Eyevinn WHIP](https://github.com/Eyevin
 To provide a custom adapter extend the base class `BaseAdapter` and override the `exchangeSdp()` method.
 
 ```javascript
-import { WebRTCPlayer, BaseAdapter, AdapterFactoryFunction } from "@eyevinn/webrtc-player";
+import { WebRTCPlayer, BaseAdapter } from "@eyevinn/webrtc-player";
 
 class CustomAdapter extends BaseAdapter {
   constructor(peer: RTCPeerConnection, channelUrl: URL) {
