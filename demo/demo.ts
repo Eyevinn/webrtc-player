@@ -1,4 +1,4 @@
-import { WebRTCPlayer } from ".";
+import { WebRTCPlayer } from "../src/index";
 
 const BROADCASTER_URL = process.env.BROADCASTER_URL || "https://broadcaster-wrtc.prod.eyevinn.technology/broadcaster";
 
