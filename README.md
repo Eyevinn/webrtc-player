@@ -24,7 +24,8 @@ npm install @eyevinn/webrtc-player
 ```
 {
   video: HTMLVideoElement;
-  type: string; // type of adapter (see below for a list of available types)
+  type: string; // type of adapter (see below for a list of included adapters below)
+  adapter: BaseAdapter; // provide a custom adapter, type is "custom"
 }
 ```
 
@@ -40,6 +41,35 @@ Compatible with WebRTC media servers in [Eyevinn WHIP](https://github.com/Eyevin
 2. Client awaits ICE candidate selection to be completed.
 3. Sends an updated local SDP in a JSON `{ sdp: <localSdp> }` to the server using HTTP POST to the specified `channelUrl`.
 4. Server responds with a JSON `{ sdp: <remoteSdp> } ` containing the remote SDP.
+
+## Custom Adapter
+
+To provide a custom adapter extend the base class `BaseAdapter` and override the `exchangeSdp()` method.
+
+```javascript
+import { WebRTCPlayer, BaseAdapter, AdapterFactoryFunction } from "@eyevinn/webrtc-player";
+
+class CustomAdapter extends BaseAdapter {
+  constructor(peer: RTCPeerConnection, channelUrl: URL) {
+    super(peer, channelUrl);
+  }
+
+  // Overload SDP exchange method
+  async exchangeSdp() {
+    // do stuff here
+  }
+}
+
+const video = document.querySelector("video");
+const player = new WebRTCPlayer({
+  video: video, 
+  type: "custom", 
+  adapterFactory: (peer: RTCPeerConnection, channelUrl: URL) => {
+    return new CustomAdapter(peer, channelUrl);
+  }
+});
+
+```
 
 # About Eyevinn Technology
 

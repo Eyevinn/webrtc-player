@@ -38,6 +38,5 @@ window.addEventListener("DOMContentLoaded", async () => {
     const channelUrl = input.value;
     const player = new WebRTCPlayer({ video: video, type: "se.eyevinn.webrtc", iceServers: iceServers });
     await player.load(new URL(channelUrl));
-    player.unmute();
   });
 });
