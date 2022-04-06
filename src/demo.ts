@@ -20,9 +20,23 @@ window.addEventListener("DOMContentLoaded", async () => {
     input.value = channels[0].resource;
   }
 
+  let iceServers: RTCIceServer[];
+
+  if (process.env.ICE_SERVERS) {
+    iceServers = [];
+    process.env.ICE_SERVERS.split(",").forEach(server => {
+      // turn:<username>:<password>@turn.eyevinn.technology:3478
+      const m = server.match(/^turn:(\S+):(\S+)@(\S+):(\d+)/);
+      if (m) {
+        const [ _, username, credential, host, port ] = m;
+        iceServers.push({ urls: "turn:" + host + ":" + port, username: username, credential: credential });
+      }
+    });
+  }
+
   document.querySelector<HTMLButtonElement>("#play").addEventListener("click", async () => {
     const channelUrl = input.value;
-    const player = new WebRTCPlayer({ video: video, type: "se.eyevinn.webrtc" });
+    const player = new WebRTCPlayer({ video: video, type: "se.eyevinn.webrtc", iceServers: iceServers });
     await player.load(new URL(channelUrl));
     player.unmute();
   });
