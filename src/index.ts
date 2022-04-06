@@ -24,12 +24,7 @@ export class WebRTCPlayer {
         this.videoElement.srcObject = ev.streams[0];
       }
     };
-
-    const offer = await this.peer.createOffer({
-      offerToReceiveAudio: true,
-      offerToReceiveVideo: true,
-    });
-    this.peer.setLocalDescription(offer);
+    await adapter.connect();
   }
 
   mute() {
