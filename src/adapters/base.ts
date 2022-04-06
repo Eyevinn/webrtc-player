@@ -8,7 +8,7 @@ export class BaseAdapter {
   protected localPeer: RTCPeerConnection;
   protected channelUrl: URL;
   private debug: boolean;
-  private iceGatheringTimeout: NodeJS.Timeout;
+  private iceGatheringTimeout: any;
   private iceGatheringComplete: boolean;
 
   constructor(peer: RTCPeerConnection, channelUrl: URL) {
