@@ -22,7 +22,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   document.querySelector<HTMLButtonElement>("#play").addEventListener("click", async () => {
     const channelUrl = input.value;
-    const player = new WebRTCPlayer({ video: video });
+    const player = new WebRTCPlayer({ video: video, type: "se.eyevinn.webrtc" });
     await player.load(new URL(channelUrl));
     player.unmute();
   });
