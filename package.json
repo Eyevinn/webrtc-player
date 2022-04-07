@@ -1,7 +1,7 @@
 {
   "name": "@eyevinn/webrtc-player",
   "version": "0.2.4",
-  "description": "Open Source WebRTC Player with WebRTC media server adapters",
+  "description": "Media Server independent WebRTC player",
   "homepage": "https://webcast.eyevinn.technology",
   "bugs": "https://github.com/Eyevinn/webrtc-player/issues",
   "source": "src/index.ts",

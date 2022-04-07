@@ -1,4 +1,4 @@
-# Open Source WebRTC Player with WebRTC media server adapters.
+# Media Server independent WebRTC player
 
 As the SDP Offer/Answer exchange is WebRTC media server specific this WebRTC player is designed to be extended with Media Server specific adapters. You can either use one of the included media server adapters or build your own custom adapter.
 
