@@ -10,6 +10,7 @@ export class BaseAdapter {
   private debug: boolean;
   private iceGatheringTimeout: any;
   private iceGatheringComplete: boolean;
+  private onIceCandidateFn: ({ candidate: RTCIceCandidate }) => void;
 
   constructor(peer: RTCPeerConnection, channelUrl: URL) {
     this.localPeer = peer;
@@ -20,6 +21,7 @@ export class BaseAdapter {
     this.localPeer.oniceconnectionstatechange =
       this.onIceConnectionStateChange.bind(this);
     this.localPeer.onicecandidateerror = this.onIceCandidateError.bind(this);
+    this.onIceCandidateFn = this.onIceCandidate.bind(this);
   }
 
   private log(...args: any[]) {
@@ -45,7 +47,7 @@ export class BaseAdapter {
       // ICE gathering is complete
       clearTimeout(this.iceGatheringTimeout);
 
-      this.localPeer.removeEventListener("icecandidate", this.onIceCandidate.bind(this));
+      this.localPeer.removeEventListener("icecandidate", this.onIceCandidateFn);
       this.onIceGatheringComplete();
     } else {
       this.log("IceCandidate", candidate.candidate);
@@ -60,7 +62,7 @@ export class BaseAdapter {
     this.log("IceGatheringTimeout");
     clearTimeout(this.iceGatheringTimeout);
 
-    this.localPeer.removeEventListener("icecandidate", this.onIceCandidate.bind(this));
+    this.localPeer.removeEventListener("icecandidate", this.onIceCandidateFn);
     this.onIceGatheringComplete();
   }
 
@@ -85,7 +87,7 @@ export class BaseAdapter {
     });
     this.localPeer.setLocalDescription(offer);
 
-    this.localPeer.addEventListener("icecandidate", this.onIceCandidate.bind(this));
+    this.localPeer.addEventListener("icecandidate", this.onIceCandidateFn);
     this.iceGatheringComplete = false;
     this.iceGatheringTimeout = setTimeout(this.onIceGatheringTimeout.bind(this), (opts && opts.timeout) || DEFAULT_CONNECT_TIMEOUT);
   }
