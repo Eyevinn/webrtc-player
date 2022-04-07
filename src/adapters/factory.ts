@@ -9,10 +9,14 @@ const EyevinnAdapterFactory: AdapterFactoryFunction = (peer, channelUrl) => {
   return new EyevinnAdapter(peer, channelUrl);
 }
 
-export function AdapterFactory(type: string, peer: RTCPeerConnection, channelUrl: URL) {
-  const adapters = {
-    "se.eyevinn.webrtc": EyevinnAdapterFactory,
-  };
-  
+const adapters = {
+  "se.eyevinn.webrtc": EyevinnAdapterFactory,
+};
+
+export function AdapterFactory(type: string, peer: RTCPeerConnection, channelUrl: URL) {  
   return adapters[type](peer, channelUrl);
+}
+
+export function ListAvailableAdapters() {
+  return Object.keys(adapters);
 }

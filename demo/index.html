@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <title>Media Server independent WebRTC player</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css">
     <script type="module" src="./demo.ts"></script>
     <style type="text/css">
@@ -8,13 +9,38 @@
         width: 100%;
         height: 100%;
       }
+      input {
+        width: 90%;
+      }
+      footer {
+        font-size: 0.8em;
+        text-align: center;
+      }
+      #input {
+        display: none;
+      }
+      button {
+        margin: 4px;
+      }
     </style>
   </head>
   <body>
+    <header>
+      <h1>Media Server independent WebRTC player</h1>
+    </header>
     <section>
-      <input id="channelUrl" type="text" size="80" value=""></input>
-      <button id="play">Play</button>
+      <p>Available adapters:</p>
+      <div id="adapters"></div>
+      <div id="input">
+        <input id="channelUrl" type="text" value=""></input>
+        <button id="play">Play</button>
+      </div>
       <video autoplay muted controls></video>
     </section>
+    <footer>
+      <p>
+        By <a href="https://www.eyevinn.se">Eyevinn Technology AB</a> and it is <a href="https://github.com/Eyevinn/webrtc-player">Open Source</a>
+      </p>
+    </footer>
   </body>
 </html>

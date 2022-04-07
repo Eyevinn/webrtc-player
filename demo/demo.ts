@@ -1,4 +1,4 @@
-import { WebRTCPlayer } from "../src/index";
+import { WebRTCPlayer, ListAvailableAdapters } from "../src/index";
 
 const BROADCASTER_URL = process.env.BROADCASTER_URL || "https://broadcaster-wrtc.prod.eyevinn.technology/broadcaster";
 
@@ -14,11 +14,30 @@ async function getChannels(broadcasterUrl) {
 window.addEventListener("DOMContentLoaded", async () => {
   const input = document.querySelector<HTMLInputElement>("#channelUrl");
   const video = document.querySelector("video");
+  const inputContainer = document.querySelector<HTMLDivElement>("#input");
+  const adapterContainer = document.querySelector<HTMLDivElement>("#adapters");
 
-  const channels = await getChannels(BROADCASTER_URL);
-  if (channels.length > 0) {
-    input.value = channels[0].resource;
+  const searchParams = new URL(window.location.href).searchParams;
+  const type = searchParams.get("type") || "se.eyevinn.webrtc";
+
+  if (type === "se.eyevinn.webrtc") {
+    const channels = await getChannels(BROADCASTER_URL);
+    if (channels.length > 0) {
+      input.value = channels[0].resource;
+    }
+    inputContainer.style.display = "block";
   }
+
+  ListAvailableAdapters().forEach(adapterType => {
+    const btn = document.createElement("button");
+    btn.textContent = adapterType;
+    btn.onclick = () => {
+      const url = new URL(window.location.href);
+      url.searchParams.set("type", adapterType);
+      window.open(url, "_self");
+    };
+    adapterContainer.appendChild(btn);
+  });
 
   let iceServers: RTCIceServer[];
 
@@ -36,7 +55,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   document.querySelector<HTMLButtonElement>("#play").addEventListener("click", async () => {
     const channelUrl = input.value;
-    const player = new WebRTCPlayer({ video: video, type: "se.eyevinn.webrtc", iceServers: iceServers });
+    const player = new WebRTCPlayer({ video: video, type: type, iceServers: iceServers });
     await player.load(new URL(channelUrl));
   });
 });
