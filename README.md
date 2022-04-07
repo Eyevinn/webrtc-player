@@ -4,6 +4,7 @@ As the SDP Offer/Answer exchange is WebRTC media server specific this WebRTC pla
 
 Contributions are welcome, see below for more information.
 
+![Screenshot of demo application](screenshot.png)
 ## Installation
 
 ```
