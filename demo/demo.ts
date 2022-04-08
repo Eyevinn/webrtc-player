@@ -55,7 +55,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   document.querySelector<HTMLButtonElement>("#play").addEventListener("click", async () => {
     const channelUrl = input.value;
-    const player = new WebRTCPlayer({ video: video, type: type, iceServers: iceServers });
+    const player = new WebRTCPlayer({ video: video, type: type, iceServers: iceServers, debug: true });
     await player.load(new URL(channelUrl));
   });
 });

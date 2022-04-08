@@ -24,7 +24,7 @@ export class BaseAdapter {
     this.onIceCandidateFn = this.onIceCandidate.bind(this);
   }
 
-  private log(...args: any[]) {
+  protected log(...args: any[]) {
     if (this.debug) {
       console.log("WebRTC-player", ...args);
     }
@@ -81,6 +81,9 @@ export class BaseAdapter {
   }
 
   async connect(opts?: AdapterConnectOptions) {
+    this.localPeer.addTransceiver("video", { direction: "recvonly" });
+    this.localPeer.addTransceiver("audio", { direction: "recvonly" });
+
     const offer = await this.localPeer.createOffer({
       offerToReceiveAudio: true,
       offerToReceiveVideo: true,
