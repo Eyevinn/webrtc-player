@@ -44,6 +44,7 @@ ICE_SERVERS=turn:<USERNAME>:<SECRET>@turn.eyevinn.technology:3478 npm run dev
   iceServers: RTCIceServer[]; // ICE server config
   type: string; // type of adapter (see below for a list of included adapters below)
   adapterFactory: AdapterFactoryFunction; // provide a custom adapter factory when adapter type is "custom"
+  createDataChannels?: string[]; // array of datachannel labels to create 
 }
 ```
 

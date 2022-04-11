@@ -53,9 +53,34 @@ window.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
+  let player;
+
   document.querySelector<HTMLButtonElement>("#play").addEventListener("click", async () => {
     const channelUrl = input.value;
-    const player = new WebRTCPlayer({ video: video, type: type, iceServers: iceServers, debug: true });
+    player = new WebRTCPlayer({ 
+      video: video, 
+      type: type, 
+      iceServers: iceServers, 
+      debug: true,
+      createDataChannels: [ "reactions" ] });
+
     await player.load(new URL(channelUrl));
+
+    player.onmessage = (message) => {
+      console.log(message);
+    }
+  });
+
+  const heartButton = document.querySelector<HTMLButtonElement>("#heart");
+  heartButton.addEventListener("click", async () => {
+    heartButton.classList.toggle("animate");
+    player.send("reactions", {
+      event: "reaction",
+      reaction: "like",
+    });
+
+    setTimeout(() => { 
+      heartButton.classList.remove("animate");
+    }, 5000);
   });
 });
