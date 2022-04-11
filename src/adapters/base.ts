@@ -80,6 +80,11 @@ export class BaseAdapter {
     throw new Error("Adapter must implement a way to exchange SDPs");
   }
 
+  setupDataChannels(labels: string[]): RTCDataChannel[] {
+    const channels = labels.map(label => this.localPeer.createDataChannel(label));
+    return channels;
+  }
+
   async connect(opts?: AdapterConnectOptions) {
     this.localPeer.addTransceiver("video", { direction: "recvonly" });
     this.localPeer.addTransceiver("audio", { direction: "recvonly" });

@@ -10,6 +10,7 @@ interface WebRTCPlayerOptions {
   adapterFactory?: AdapterFactoryFunction;
   iceServers?: RTCIceServer[];
   debug?: boolean;
+  createDataChannels?: string[];
 }
 
 export class WebRTCPlayer {
@@ -19,6 +20,8 @@ export class WebRTCPlayer {
   private adapterFactory: AdapterFactoryFunction;
   private iceServers: RTCIceServer[];
   private debug: boolean;
+  private createDataChannels: string[];
+  private rtcDataChannels: RTCDataChannel[];
 
   constructor(opts: WebRTCPlayerOptions) {
     this.videoElement = opts.video;
@@ -30,6 +33,7 @@ export class WebRTCPlayer {
       this.iceServers = opts.iceServers;
     }
     this.debug = !!opts.debug;
+    this.createDataChannels = opts.createDataChannels || [];
   }
 
   async load(channelUrl: URL) {
@@ -54,7 +58,26 @@ export class WebRTCPlayer {
         this.videoElement.srcObject = ev.streams[0];
       }
     };
+    if (this.createDataChannels) {
+      this.rtcDataChannels = adapter.setupDataChannels(this.createDataChannels);
+    }
     await adapter.connect();
+  }
+
+  sendMessage(channelLabel: string, data: any) {
+    const rtcDataChannel = this.rtcDataChannels.find(channel => channel.label === channelLabel);
+    if (!rtcDataChannel) {
+      return;
+    }
+    if (rtcDataChannel.readyState !== "open") {
+      return;
+    }
+
+    rtcDataChannel.send(JSON.stringify(data));
+  }
+
+  get dataChannels(): RTCDataChannel[] {
+    return this.rtcDataChannels;
   }
 
   mute() {
