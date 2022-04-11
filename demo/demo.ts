@@ -66,9 +66,9 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     await player.load(new URL(channelUrl));
 
-    player.onmessage = (message) => {
+    player.on("message", (message) => {
       console.log(message);
-    }
+    });
   });
 
   const heartButton = document.querySelector<HTMLButtonElement>("#heart");
