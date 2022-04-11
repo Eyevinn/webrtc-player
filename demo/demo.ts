@@ -65,12 +65,16 @@ window.addEventListener("DOMContentLoaded", async () => {
       createDataChannels: [ "reactions" ] });
 
     await player.load(new URL(channelUrl));
+
+    player.onmessage = (message) => {
+      console.log(message);
+    }
   });
 
   const heartButton = document.querySelector<HTMLButtonElement>("#heart");
   heartButton.addEventListener("click", async () => {
     heartButton.classList.toggle("animate");
-    player.sendMessage("reactions", {
+    player.send("reactions", {
       event: "reaction",
       reaction: "like",
     });

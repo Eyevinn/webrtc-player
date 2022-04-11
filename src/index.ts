@@ -4,6 +4,8 @@ import { AdapterFactory, AdapterFactoryFunction } from "./adapters/factory";
 export { BaseAdapter } from "./adapters/base";
 export { ListAvailableAdapters } from "./adapters/factory";
 
+import { EventEmitter } from "events";
+
 interface WebRTCPlayerOptions {
   video: HTMLVideoElement;
   type: string;
@@ -13,7 +15,7 @@ interface WebRTCPlayerOptions {
   createDataChannels?: string[];
 }
 
-export class WebRTCPlayer {
+export class WebRTCPlayer extends EventEmitter {
   private videoElement: HTMLVideoElement;
   private peer: RTCPeerConnection;
   private adapterType: string;
@@ -24,6 +26,7 @@ export class WebRTCPlayer {
   private rtcDataChannels: RTCDataChannel[];
 
   constructor(opts: WebRTCPlayerOptions) {
+    super();
     this.videoElement = opts.video;
     this.adapterType = opts.type;
     this.adapterFactory = opts.adapterFactory;
@@ -60,11 +63,16 @@ export class WebRTCPlayer {
     };
     if (this.createDataChannels) {
       this.rtcDataChannels = adapter.setupDataChannels(this.createDataChannels);
+      this.rtcDataChannels.forEach(channel => {
+        channel.onmessage = (ev) => {
+          this.emit("message", ev.data);
+        }
+      });
     }
     await adapter.connect();
   }
 
-  sendMessage(channelLabel: string, data: any) {
+  send(channelLabel: string, data: any) {
     const rtcDataChannel = this.rtcDataChannels.find(channel => channel.label === channelLabel);
     if (!rtcDataChannel) {
       return;
@@ -74,10 +82,6 @@ export class WebRTCPlayer {
     }
 
     rtcDataChannel.send(JSON.stringify(data));
-  }
-
-  get dataChannels(): RTCDataChannel[] {
-    return this.rtcDataChannels;
   }
 
   mute() {
