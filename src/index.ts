@@ -4,7 +4,7 @@ import { AdapterFactory, AdapterFactoryFunction } from "./adapters/factory";
 export { BaseAdapter } from "./adapters/base";
 export { ListAvailableAdapters } from "./adapters/factory";
 
-import { EventEmitter } from "events";
+import { EventEmitter } from "events";
 
 interface WebRTCPlayerOptions {
   video: HTMLVideoElement;
@@ -92,4 +92,14 @@ export class WebRTCPlayer extends EventEmitter {
     this.videoElement.muted = false;
   }
 
+  stop() {
+    this.peer.close(); 
+    this.videoElement.src = null;
+    this.videoElement.load();
+  }
+
+  destroy() {
+    this.stop();
+    this.removeAllListeners();
+  }
 }
