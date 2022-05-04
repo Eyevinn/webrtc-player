@@ -15,6 +15,8 @@ interface WebRTCPlayerOptions {
   createDataChannels?: string[];
 }
 
+const RECONNECT_ATTEMPTS = 2;
+
 export class WebRTCPlayer extends EventEmitter {
   private videoElement: HTMLVideoElement;
   private peer: RTCPeerConnection;
@@ -24,6 +26,8 @@ export class WebRTCPlayer extends EventEmitter {
   private debug: boolean;
   private createDataChannels: string[];
   private rtcDataChannels: RTCDataChannel[];
+  private channelUrl: URL;
+  private reconnectAttemptsLeft: number = RECONNECT_ATTEMPTS;
 
   constructor(opts: WebRTCPlayerOptions) {
     super();
@@ -40,13 +44,47 @@ export class WebRTCPlayer extends EventEmitter {
   }
 
   async load(channelUrl: URL) {
+    this.channelUrl = channelUrl;
+    this.connect();
+  }
+
+  private log(...args: any[]) {
+    if (this.debug) {
+      console.log("WebRTC-player", ...args);
+    }
+  }
+
+  private error(...args: any[]) {
+    console.error("WebRTC-player", ...args);
+  }
+
+  private onConnectionStateChange(e) {
+    if (this.peer.connectionState === 'failed') {
+      this.peer && this.peer.close();
+
+      if (this.reconnectAttemptsLeft <= 0) {
+        this.error('Connection failed, reconnecting failed');
+        return;
+      }
+
+      this.log(`Connection failed, recreating peer connection, attempts left ${this.reconnectAttemptsLeft}`);
+      this.connect();
+      this.reconnectAttemptsLeft--;
+
+    } else if (this.peer.connectionState === 'connected') {
+      this.reconnectAttemptsLeft = RECONNECT_ATTEMPTS;
+    }
+  }
+
+  private async connect() {
     let adapter: BaseAdapter;
     this.peer = new RTCPeerConnection({ iceServers: this.iceServers });
-    
+    this.peer.onconnectionstatechange = this.onConnectionStateChange.bind(this);
+
     if (this.adapterType !== "custom") {
-      adapter = AdapterFactory(this.adapterType, this.peer, channelUrl);
+      adapter = AdapterFactory(this.adapterType, this.peer, this.channelUrl);
     } else if (this.adapterFactory) {
-      adapter = this.adapterFactory(this.peer, channelUrl);
+      adapter = this.adapterFactory(this.peer, this.channelUrl);
     }
     if (!adapter) {
       throw new Error(`Failed to create adapter (${this.adapterType})`)
