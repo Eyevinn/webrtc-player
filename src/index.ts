@@ -1,10 +1,8 @@
-import { BaseAdapter } from "./adapters/base";
-import { AdapterFactory, AdapterFactoryFunction } from "./adapters/factory";
-
-export { BaseAdapter } from "./adapters/base";
-export { ListAvailableAdapters } from "./adapters/factory";
-
+import { Adapter } from "./adapters/Adapter";
+import { AdapterFactory, AdapterFactoryFunction } from "./adapters/AdapterFactory";
 import { EventEmitter } from "events";
+
+export { ListAvailableAdapters } from "./adapters/AdapterFactory";
 
 interface WebRTCPlayerOptions {
   video: HTMLVideoElement;
@@ -77,7 +75,7 @@ export class WebRTCPlayer extends EventEmitter {
   }
 
   private async connect() {
-    let adapter: BaseAdapter;
+    let adapter: Adapter;
     this.peer = new RTCPeerConnection({ iceServers: this.iceServers });
     this.peer.onconnectionstatechange = this.onConnectionStateChange.bind(this);
 
