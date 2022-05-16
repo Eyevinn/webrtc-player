@@ -31,7 +31,7 @@ ICE_SERVERS=turn:<USERNAME>:<SECRET>@turn.eyevinn.technology:3478 npm run dev
   import { WebRTCPlayer } from "@eyevinn/webrtc-player";
 
   const video = document.querySelector("video");
-  const player = new WebRTCPlayer({ video: video, type: "se.eyevinn.webrtc" });
+  const player = new WebRTCPlayer({ video: video, type: "se.eyevinn.whpp" });
   await player.load(new URL(channelUrl));
   player.unmute();
 ```
@@ -60,6 +60,10 @@ Compatible with WebRTC media servers in [Eyevinn WHIP](https://github.com/Eyevin
 2. Client awaits ICE candidate selection to be completed.
 3. Sends an updated local SDP in a JSON `{ sdp: <localSdp> }` to the server using HTTP POST to the specified `channelUrl`.
 4. Server responds with a JSON `{ sdp: <remoteSdp> } ` containing the remote SDP.
+
+### `se.eyevinn.whpp`
+
+Compatible with WebRTC media servers that implements the [WebRTC HTTP Playback Protocol](https://github.com/Eyevinn/webrtc-http-playback-protocol).
 
 ### Custom Adapter
 
