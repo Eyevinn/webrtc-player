@@ -1,8 +1,13 @@
 import { Adapter } from "./Adapter";
+import { WHPPAdapter } from "./WHPPAdapter";
 import { EyevinnAdapter } from "./EyevinnAdapter";
 
 export interface AdapterFactoryFunction {
   (peer: RTCPeerConnection, channelUrl: URL): Adapter;
+}
+
+const WHPPAdapterFactory: AdapterFactoryFunction = (peer, channelUrl) => {
+  return new WHPPAdapter(peer, channelUrl);
 }
 
 const EyevinnAdapterFactory: AdapterFactoryFunction = (peer, channelUrl) => {
@@ -10,6 +15,7 @@ const EyevinnAdapterFactory: AdapterFactoryFunction = (peer, channelUrl) => {
 }
 
 const adapters = {
+  "se.eyevinn.whpp": WHPPAdapterFactory,
   "se.eyevinn.webrtc": EyevinnAdapterFactory,
 };
 

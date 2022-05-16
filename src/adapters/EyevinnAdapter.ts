@@ -2,22 +2,6 @@ import { Adapter, AdapterConnectOptions } from './Adapter'
 
 const DEFAULT_CONNECT_TIMEOUT = 2000;
 
-interface EyevinnCandidateRequest {
-  candidate: string;
-}
-
-interface EyevinnAnswerRequest {
-  answer: string;
-}
-
-interface EyevinnMediaStream {
-  streamId: string;
-}
-
-interface EyevinnOfferResponse {
-  offer: string;
-  mediaStreams: EyevinnMediaStream[];
-}
 
 export class EyevinnAdapter implements Adapter {
   private localPeer: RTCPeerConnection;
@@ -53,36 +37,17 @@ export class EyevinnAdapter implements Adapter {
   }
 
   async connect(opts?: AdapterConnectOptions) {
-    const response = await fetch(this.channelUrl.href, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: '{}'
+    this.localPeer.addTransceiver("video", { direction: "recvonly" });
+    this.localPeer.addTransceiver("audio", { direction: "recvonly" });
+
+    const offer = await this.localPeer.createOffer({
+      offerToReceiveAudio: true,
+      offerToReceiveVideo: true,
     });
+    this.localPeer.setLocalDescription(offer);
 
-    if (!response.ok) {
-      return;
-    }
-
-    const offerResponse = <EyevinnOfferResponse>await response.json();
-    const locationHeader = response.headers.get('location');
-    this.resourceUrl = new URL(locationHeader);
-
-    if (!this.supportsTrickleIce()) {
-      this.waitingForCandidates = true;
-    }
-
-    await this.localPeer.setRemoteDescription({type: 'offer', sdp: offerResponse.offer});
-
-    const answer = await this.localPeer.createAnswer();
-    await this.localPeer.setLocalDescription(answer);
-
-    if (this.supportsTrickleIce()) {
-      await this.sendAnswer();
-    } else {
-      this.iceGatheringTimeout = setTimeout(this.onIceGatheringTimeout.bind(this), (opts && opts.timeout) || DEFAULT_CONNECT_TIMEOUT);
-    }
+    this.waitingForCandidates = true;
+    this.iceGatheringTimeout = setTimeout(this.onIceGatheringTimeout.bind(this), (opts && opts.timeout) || DEFAULT_CONNECT_TIMEOUT);
   }
 
   private log(...args: any[]) {
@@ -98,7 +63,7 @@ export class EyevinnAdapter implements Adapter {
   private onIceGatheringStateChange(event: Event) {
     this.log("IceGatheringState", this.localPeer.iceGatheringState);
 
-    if (this.localPeer.iceGatheringState !== 'complete' || this.supportsTrickleIce() || !this.waitingForCandidates) {
+    if (this.localPeer.iceGatheringState !== 'complete' || !this.waitingForCandidates) {
       return;
     }
 
@@ -124,12 +89,6 @@ export class EyevinnAdapter implements Adapter {
     }
 
     this.log("IceCandidate", candidate.candidate);
-
-    if (!this.supportsTrickleIce()) {
-      return;
-    }
-
-    this.sendCandidate(candidate);
   }
 
   private onIceCandidateError(e) {
@@ -139,7 +98,7 @@ export class EyevinnAdapter implements Adapter {
   private onIceGatheringTimeout() {
     this.log("IceGatheringTimeout");
 
-    if (this.supportsTrickleIce() || !this.waitingForCandidates) {
+    if (!this.waitingForCandidates) {
       return;
     }
 
@@ -150,48 +109,16 @@ export class EyevinnAdapter implements Adapter {
     this.waitingForCandidates = false;
     clearTimeout(this.iceGatheringTimeout);
 
-    await this.sendAnswer();
-  }
-
-  private supportsTrickleIce(): boolean {
-    return false;
-  }
-
-  private async sendCandidate(rtcIceCandidate: RTCIceCandidate) {
-    const candidateRequest: EyevinnCandidateRequest = {
-      candidate: rtcIceCandidate.candidate
-    };
-
-    const response = await fetch(this.resourceUrl.href, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(candidateRequest)
-    });
-
-    if (!response.ok) {
-      this.error(`sendCandidate response: ${response.status}`);
-    }
-  }
-
-  private async sendAnswer() {
-    const answer = this.localPeer.localDescription;
-
-    const answerRequest:EyevinnAnswerRequest = {
-      answer: answer.sdp
-    }
-
-    const response = await fetch(this.resourceUrl.href, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(answerRequest)
-    });
-
-    if (!response.ok) {
-      this.error(`sendAnswer response: ${response.status}`);
-    }
+    const response = await fetch(this.channelUrl.href, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ sdp: this.localPeer.localDescription.sdp })
+      });
+      if (response.ok) {
+        const { sdp } = await response.json();
+        this.localPeer.setRemoteDescription({ type: "answer", sdp: sdp });
+      }
   }
 }

@@ -1,6 +1,6 @@
 import { WebRTCPlayer, ListAvailableAdapters } from "../src/index";
 
-const BROADCASTER_URL = process.env.BROADCASTER_URL || "https://broadcaster-wrtc.prod.eyevinn.technology/broadcaster";
+const BROADCASTER_URL = process.env.BROADCASTER_URL || "https://broadcaster-wrtc.prod.eyevinn.technology/broadcaster";
 
 async function getChannels(broadcasterUrl) {
   const response = await fetch(broadcasterUrl + "/channel");
@@ -18,9 +18,9 @@ window.addEventListener("DOMContentLoaded", async () => {
   const adapterContainer = document.querySelector<HTMLDivElement>("#adapters");
 
   const searchParams = new URL(window.location.href).searchParams;
-  const type = searchParams.get("type") || "se.eyevinn.webrtc";
+  const type = searchParams.get("type") || "se.eyevinn.whpp";
 
-  if (type === "se.eyevinn.webrtc") {
+  if (type === "se.eyevinn.whpp" || type === "se.eyevinn.webrtc") {
     const channels = await getChannels(BROADCASTER_URL);
     if (channels.length > 0) {
       input.value = channels[0].resource;
