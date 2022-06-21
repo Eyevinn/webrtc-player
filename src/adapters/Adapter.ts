@@ -5,7 +5,6 @@ export interface AdapterConnectOptions {
 }
 
 export interface Adapter{
-    setupDataChannels(labels: string[]): RTCDataChannel[];
     enableDebug();
     getPeer() : RTCPeerConnection;
     connect(opts?: AdapterConnectOptions);

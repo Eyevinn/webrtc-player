@@ -61,26 +61,9 @@ window.addEventListener("DOMContentLoaded", async () => {
       video: video, 
       type: type, 
       iceServers: iceServers, 
-      debug: true,
-      createDataChannels: [ "reactions" ] });
+      debug: true
+    });
 
     await player.load(new URL(channelUrl));
-
-    player.on("message", (message) => {
-      console.log(message);
-    });
-  });
-
-  const heartButton = document.querySelector<HTMLButtonElement>("#heart");
-  heartButton.addEventListener("click", async () => {
-    heartButton.classList.toggle("animate");
-    player.send("reactions", {
-      event: "reaction",
-      reaction: "like",
-    });
-
-    setTimeout(() => { 
-      heartButton.classList.remove("animate");
-    }, 5000);
   });
 });
