@@ -39,11 +39,6 @@ export class WHPPAdapter implements Adapter {
     this.localPeer.onicecandidate = this.onIceCandidate.bind(this);
   }
 
-  setupDataChannels(labels: string[]): RTCDataChannel[] {
-    const channels = labels.map(label => this.localPeer.createDataChannel(label));
-    return channels;
-  }
-
   enableDebug() {
     this.debug = true;
   }
