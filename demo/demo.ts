@@ -1,6 +1,6 @@
 import { WebRTCPlayer, ListAvailableAdapters } from "../src/index";
 
-const BROADCASTER_URL = process.env.BROADCASTER_URL || "https://broadcaster-wrtc.prod.eyevinn.technology/broadcaster";
+const BROADCASTER_URL = process.env.BROADCASTER_URL || "https://broadcaster.lab.sto.eyevinn.technology:8443/broadcaster";
 
 async function getChannels(broadcasterUrl) {
   const response = await fetch(broadcasterUrl + "/channel");
