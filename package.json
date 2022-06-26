@@ -35,6 +35,7 @@
     "typescript": "^4.6.3"
   },
   "dependencies": {
+    "@eyevinn/whpp-client": "^0.1.1",
     "events": "^3.3.0"
   }
 }
