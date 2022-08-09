@@ -17,7 +17,7 @@ To run the demo application run:
 npm run dev
 ```
 
-It will connect with an Eyevinn WebRTC media server included in our [WHIP project](https://github.com/Eyevinn/whip) and use the included adpater `se.eyevinn.webrtc`. 
+It will connect with an Eyevinn WebRTC media server included in our [WHIP project](https://github.com/Eyevinn/whip) and use the included adapter `se.eyevinn.whpp`. 
 
 To provide a custom list of STUN/TURN servers to use.
 
