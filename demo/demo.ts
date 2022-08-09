@@ -57,11 +57,14 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   document.querySelector<HTMLButtonElement>("#play").addEventListener("click", async () => {
     const channelUrl = input.value;
+    const vmapUrl = document.querySelector<HTMLInputElement>("#preroll").checked ? 
+      "http://eyevinn.adtest.eyevinn.technology/api/v1/vmap?bp=0&dur=30" : undefined;
     player = new WebRTCPlayer({ 
       video: video, 
       type: type, 
       iceServers: iceServers, 
-      debug: true
+      debug: true,
+      vmapUrl: vmapUrl,
     });
 
     await player.load(new URL(channelUrl));
