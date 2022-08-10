@@ -1,6 +1,7 @@
 import { Adapter } from "./adapters/Adapter";
 import { AdapterFactory, AdapterFactoryFunction } from "./adapters/AdapterFactory";
 import { EventEmitter } from "events";
+import { CSAIManager } from "@eyevinn/csai-manager";
 
 export { ListAvailableAdapters } from "./adapters/AdapterFactory";
 
@@ -10,6 +11,7 @@ interface WebRTCPlayerOptions {
   adapterFactory?: AdapterFactoryFunction;
   iceServers?: RTCIceServer[];
   debug?: boolean;
+  vmapUrl?: string;
 }
 
 const RECONNECT_ATTEMPTS = 2;
@@ -23,6 +25,7 @@ export class WebRTCPlayer extends EventEmitter {
   private debug: boolean;
   private channelUrl: URL;
   private reconnectAttemptsLeft: number = RECONNECT_ATTEMPTS;
+  private csaiManager?: CSAIManager;
 
   constructor(opts: WebRTCPlayerOptions) {
     super();
@@ -35,6 +38,17 @@ export class WebRTCPlayer extends EventEmitter {
       this.iceServers = opts.iceServers;
     }
     this.debug = !!opts.debug;
+    if (opts.vmapUrl) {
+      this.csaiManager = new CSAIManager({
+        contentVideoElement: this.videoElement,
+        vmapUrl: opts.vmapUrl,
+        isLive: true,
+        autoplay: true,
+      });
+      this.videoElement.addEventListener("ended", () => {
+        this.csaiManager.destroy();
+      });
+    }
   }
 
   async load(channelUrl: URL) {
