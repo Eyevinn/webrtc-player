@@ -9,12 +9,13 @@
         width: 100%;
         max-width: 800px;
         margin: 0 auto;
+        position: relative;
       }
       video {
         width: 100%;
       }
       input {
-        width: 80%;
+        width: 70%;
       }
       footer {
         font-size: 0.8em;
@@ -39,10 +40,13 @@
       <p>Available adapters:</p>
       <div id="adapters"></div>
       <div id="input">
+        <label for="channelUrl">URL</label>
         <input id="channelUrl" type="text" value=""></input>
         <button id="play">Play</button>
         <input type="checkbox" id="preroll">
         <label for="preroll">Preroll</label>
+        <label for="prerollUrl">VMAP</label>
+        <input id="prerollUrl" type="text" value="https://eyevinn.adtest.eyevinn.technology/api/v1/vmap?bp=0&dur=10"></input>
       </div>
       <div id="videocontainer">
         <video autoplay muted controls></video>

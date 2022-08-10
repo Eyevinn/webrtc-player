@@ -16,6 +16,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   const video = document.querySelector("video");
   const inputContainer = document.querySelector<HTMLDivElement>("#input");
   const adapterContainer = document.querySelector<HTMLDivElement>("#adapters");
+  const inputPrerollUrl = document.querySelector<HTMLInputElement>("#prerollUrl");
 
   const searchParams = new URL(window.location.href).searchParams;
   const type = searchParams.get("type") || "se.eyevinn.whpp";
@@ -58,7 +59,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   document.querySelector<HTMLButtonElement>("#play").addEventListener("click", async () => {
     const channelUrl = input.value;
     const vmapUrl = document.querySelector<HTMLInputElement>("#preroll").checked ? 
-      "http://eyevinn.adtest.eyevinn.technology/api/v1/vmap?bp=0&dur=30" : undefined;
+      inputPrerollUrl.value : undefined;
     player = new WebRTCPlayer({ 
       video: video, 
       type: type, 
