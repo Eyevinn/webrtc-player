@@ -8,10 +8,8 @@
   "main": "dist/main.js",
   "types": "dist/types.d.ts",
   "targets": {
-    "default": {
-      "distDir": "./dist",
-      "context": "node",
-      "isLibrary": true
+    "main": {
+      "distDir": "./dist"
     },
     "demo": {
       "source": "demo/index.html",
@@ -20,8 +18,8 @@
     }
   },
   "scripts": {
-    "dev": "parcel --target demo --host 0.0.0.0 --port 2345 --no-cache",
-    "build": "parcel build --target default --target types",
+    "dev": "parcel --target demo --dist-dir dist-demo --host 0.0.0.0 --port 2345 --no-cache",
+    "build": "parcel build --target main --target types",
     "build:demo": "parcel build --target demo",
     "postversion": "git push && git push --tags",
     "test": "echo \"Error: no test specified\" && exit 1"
