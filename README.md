@@ -67,19 +67,34 @@ Compatible with WebRTC media servers that implements the [WebRTC HTTP Playback P
 
 ### Custom Adapter
 
-To provide a custom adapter extend the base class `BaseAdapter` and override the `exchangeSdp()` method.
+To provide a custom adapter, implement the interface `Adapter`.
 
 ```javascript
-import { WebRTCPlayer, BaseAdapter } from "@eyevinn/webrtc-player";
+import { WebRTCPlayer, Adapter } from "@eyevinn/webrtc-player";
 
-class CustomAdapter extends BaseAdapter {
+class CustomAdapter implements Adapter {
+  private debug: boolean;
+  private localPeer: RTCPeerConnection;
+  private channelUrl: URL;
+
   constructor(peer: RTCPeerConnection, channelUrl: URL) {
-    super(peer, channelUrl);
+    this.debug = false;
+    this.localPeer = peer;
+    this.channelUrl = channelUrl;
   }
 
-  // Overload SDP exchange method
-  async exchangeSdp() {
-    // do stuff here
+  // Called when debug logs should be enabled
+  enableDebug() {
+    this.debug = true;
+  }
+
+  // Should return the RTCPeerConnection owned by this Adapter
+  getPeer() : RTCPeerConnection {
+    return this.localPeer;
+  }
+
+  // Implement the Adapter signalling here, starting the SDP negotiation flow.
+  connect(opts?: AdapterConnectOptions) {
   }
 }
 ```

@@ -1,5 +1,5 @@
 import { Adapter, AdapterConnectOptions } from './Adapter'
-import { WHPPClient } from "@eyevinn/whpp-client";
+import { WHPPClient } from "@eyevinn/whpp-client";
 
 export class WHPPAdapter implements Adapter {
   private client: WHPPClient;
