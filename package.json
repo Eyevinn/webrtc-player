@@ -47,7 +47,7 @@
   },
   "dependencies": {
     "@eyevinn/csai-manager": "^0.1.2",
-    "@eyevinn/whpp-client": "^0.1.1",
+    "@eyevinn/whpp-client": "^0.1.2",
     "events": "^3.3.0"
   }
 }
