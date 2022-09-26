@@ -117,6 +117,16 @@ const player = new WebRTCPlayer({
 
 We would be super happy for contribution to this project in the form adapters for specific WebRTC media servers and of course bugfixes and improvements. Write an issue with a description together with a Pull Request.
 
+# Support
+
+Join our [community on Slack](http://slack.streamingtech.se) where you can post any questions regarding any of our open source projects. Eyevinn's consulting business can also offer you:
+
+- Further development of this component
+- Customization and integration of this component into your platform
+- Support and maintenance agreement
+
+Contact [sales@eyevinn.se](mailto:sales@eyevinn.se) if you are interested.
+
 # About Eyevinn Technology
 
 Eyevinn Technology is an independent consultant firm specialized in video and streaming. Independent in a way that we are not commercially tied to any platform or technology vendor.
