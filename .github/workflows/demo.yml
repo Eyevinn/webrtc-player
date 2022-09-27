@@ -18,6 +18,8 @@ jobs:
         run: |
           npm install
           npm run build:demo
+        env:
+          BROADCASTER_URL: 'https://broadcaster.lab.sto.eyevinn.technology:8443/broadcaster/channel/sthlm'
       - name: deploy
         uses: jakejarvis/s3-sync-action@v0.5.1
         with:
