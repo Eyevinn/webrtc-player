@@ -17,8 +17,6 @@ To run the demo application run:
 npm run dev
 ```
 
-It will connect with an Eyevinn WebRTC media server included in our [WHIP project](https://github.com/Eyevinn/whip) and use the included adapter `se.eyevinn.whpp`. 
-
 To provide a custom list of STUN/TURN servers to use.
 
 ```
@@ -52,6 +50,14 @@ ICE_SERVERS=turn:<USERNAME>:<SECRET>@turn.eyevinn.technology:3478 npm run dev
 
 As SDP exchange is WebRTC media server specific this player includes adapters for various types of WebRTC media servers. 
 
+### `se.eyevinn.whpp`
+
+Compatible with WebRTC media servers that implements the [WebRTC HTTP Playback Protocol](https://github.com/Eyevinn/webrtc-http-playback-protocol).
+
+### `whep`
+
+Compatible with WebRTC media servers that implements the [WebRTC HTTP Egress Protocol](https://www.ietf.org/id/draft-murillo-whep-00.html).
+
 ### `se.eyevinn.webrtc`
 
 Compatible with WebRTC media servers in [Eyevinn WHIP](https://github.com/Eyevinn/whip) project. Implements the following SDP exchange protocol:
@@ -60,10 +66,6 @@ Compatible with WebRTC media servers in [Eyevinn WHIP](https://github.com/Eyevin
 2. Client awaits ICE candidate selection to be completed.
 3. Sends an updated local SDP in a JSON `{ sdp: <localSdp> }` to the server using HTTP POST to the specified `channelUrl`.
 4. Server responds with a JSON `{ sdp: <remoteSdp> } ` containing the remote SDP.
-
-### `se.eyevinn.whpp`
-
-Compatible with WebRTC media servers that implements the [WebRTC HTTP Playback Protocol](https://github.com/Eyevinn/webrtc-http-playback-protocol).
 
 ### Custom Adapter
 

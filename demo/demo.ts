@@ -1,6 +1,6 @@
 import { WebRTCPlayer, ListAvailableAdapters } from "../src/index";
 
-const BROADCASTER_URL = process.env.BROADCASTER_URL || "https://wrtc-edge.lab.sto.eyevinn.technology:8443/whpp";
+const BROADCASTER_URL = process.env.BROADCASTER_URL || "https://broadcaster.lab.sto.eyevinn.technology:8443/broadcaster";
 
 async function getChannels(broadcasterUrl) {
   const response = await fetch(broadcasterUrl + "/channel");
@@ -26,6 +26,8 @@ window.addEventListener("DOMContentLoaded", async () => {
     if (channels.length > 0) {
       input.value = channels[0].resource;
     }
+    inputContainer.style.display = "block";
+  } else {
     inputContainer.style.display = "block";
   }
 
@@ -62,7 +64,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       inputPrerollUrl.value : undefined;
     player = new WebRTCPlayer({ 
       video: video, 
-      type: type, 
+      type: type,
       iceServers: iceServers, 
       debug: true,
       vmapUrl: vmapUrl,
