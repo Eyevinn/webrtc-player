@@ -26,12 +26,14 @@ export class WebRTCPlayer extends EventEmitter {
   private channelUrl: URL;
   private reconnectAttemptsLeft: number = RECONNECT_ATTEMPTS;
   private csaiManager?: CSAIManager;
+  private stream: MediaStream;
 
   constructor(opts: WebRTCPlayerOptions) {
     super();
     this.videoElement = opts.video;
     this.adapterType = opts.type;
     this.adapterFactory = opts.adapterFactory;
+    this.stream = new MediaStream();
 
     this.iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
     if (opts.iceServers) {
@@ -81,6 +83,9 @@ export class WebRTCPlayer extends EventEmitter {
 
     } else if (this.peer.connectionState === 'connected') {
       this.reconnectAttemptsLeft = RECONNECT_ATTEMPTS;
+      if (!this.videoElement.srcObject) {
+				this.videoElement.srcObject = this.stream;
+			}
     }
   }
 
@@ -88,7 +93,7 @@ export class WebRTCPlayer extends EventEmitter {
     let adapter: Adapter;
     this.peer = new RTCPeerConnection({ iceServers: this.iceServers });
     this.peer.onconnectionstatechange = this.onConnectionStateChange.bind(this);
-
+   
     if (this.adapterType !== "custom") {
       adapter = AdapterFactory(this.adapterType, this.peer, this.channelUrl);
     } else if (this.adapterFactory) {
@@ -103,9 +108,26 @@ export class WebRTCPlayer extends EventEmitter {
     }
 
     this.peer.ontrack = (ev) => {
-      if (ev.streams && ev.streams[0]) {
-        this.videoElement.srcObject = ev.streams[0];
-      }
+			const track = ev.track;
+			const currentTracks = this.stream.getTracks();
+			const alreadyHasVideoTrack = currentTracks.some(track => track.kind === 'video');
+			const alreadyHasAudioTrack = currentTracks.some(track => track.kind === 'audio');
+			switch (track.kind) {
+				case 'video':
+					if (alreadyHasVideoTrack) {
+						break;
+					}
+					this.stream.addTrack(track);
+					break;
+				case 'audio':
+					if (alreadyHasAudioTrack) {
+						break;
+					}
+					this.stream.addTrack(track);
+					break;
+				default:
+					this.log('got unknown track ' + track);
+			}
     };
     
     await adapter.connect();
