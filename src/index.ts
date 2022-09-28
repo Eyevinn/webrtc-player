@@ -85,6 +85,7 @@ export class WebRTCPlayer extends EventEmitter {
       this.log("Connected");
       this.reconnectAttemptsLeft = RECONNECT_ATTEMPTS;
       if (!this.videoElement.srcObject) {
+        this.log("Updating video element srcobject");
 				this.videoElement.srcObject = this.stream;
 			}
     }
@@ -95,7 +96,7 @@ export class WebRTCPlayer extends EventEmitter {
     switch(error) {
       case "reconnectneeded":
         this.peer && this.peer.close();
-        this.videoElement.src = null;
+        this.videoElement.srcObject = undefined;
         this.setupPeer();
         this.adapter.resetPeer(this.peer);
         this.adapter.connect();
@@ -107,32 +108,27 @@ export class WebRTCPlayer extends EventEmitter {
     this.stream = new MediaStream();
     this.peer = new RTCPeerConnection({ iceServers: this.iceServers });
     this.peer.onconnectionstatechange = this.onConnectionStateChange.bind(this);
+    this.peer.ontrack = this.onTrack.bind(this);
+  }
 
-    this.peer.ontrack = (ev) => {
-			const track = ev.track;
-      this.log("ontrack", track);
-			const currentTracks = this.stream.getTracks();
-			const alreadyHasVideoTrack = currentTracks.some(track => track.kind === 'video');
-			const alreadyHasAudioTrack = currentTracks.some(track => track.kind === 'audio');
-			switch (track.kind) {
-				case 'video':
-					if (alreadyHasVideoTrack) {
-						break;
-					}
-          this.log("Adding video track");
-					this.stream.addTrack(track);
-					break;
-				case 'audio':
-					if (alreadyHasAudioTrack) {
-						break;
-					}
-          this.log("Adding audio track");
-					this.stream.addTrack(track);
-					break;
-				default:
-					this.log('got unknown track ' + track);
-			}
-    };
+  private onTrack(ev) {
+    const track = ev.track;
+    switch (track.kind) {
+      case 'video':
+        if (track.label !== 'feedbackvideolabel') {
+          const newTrack = track.clone();
+          this.log("Adding video track", newTrack);
+          this.stream.addTrack(newTrack);
+        }
+        break;
+      case 'audio':
+        const newTrack = track.clone();
+        this.log("Adding audio track", newTrack);
+        this.stream.addTrack(newTrack);
+        break;
+      default:
+        this.log('unknown track', track);
+    }
   }
 
   private async connect() {
