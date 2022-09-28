@@ -11,20 +11,23 @@ export class EyevinnAdapter implements Adapter {
   private waitingForCandidates: boolean = false;
   private resourceUrl: URL | undefined = undefined;
 
-  constructor(peer: RTCPeerConnection, channelUrl: URL) {
-    this.localPeer = peer;
+  constructor(peer: RTCPeerConnection, channelUrl: URL, onError: (error: string) => void) {
     this.channelUrl = channelUrl;
     this.debug = true;
+    this.resetPeer(peer);
+  }
 
+  enableDebug() {
+    this.debug = true;
+  }
+
+  resetPeer(newPeer: RTCPeerConnection) {
+    this.localPeer = newPeer;
     this.localPeer.onicegatheringstatechange = this.onIceGatheringStateChange.bind(this);
     this.localPeer.oniceconnectionstatechange =
       this.onIceConnectionStateChange.bind(this);
     this.localPeer.onicecandidateerror = this.onIceCandidateError.bind(this);
     this.localPeer.onicecandidate = this.onIceCandidate.bind(this);
-  }
-
-  enableDebug() {
-    this.debug = true;
   }
 
   getPeer(): RTCPeerConnection {

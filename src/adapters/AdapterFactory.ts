@@ -4,19 +4,19 @@ import { EyevinnAdapter } from "./EyevinnAdapter";
 import { WHEPAdapter } from "./WHEPAdapter";
 
 export interface AdapterFactoryFunction {
-  (peer: RTCPeerConnection, channelUrl: URL): Adapter;
+  (peer: RTCPeerConnection, channelUrl: URL, onError: (error: string) => void): Adapter;
 }
 
-const WHPPAdapterFactory: AdapterFactoryFunction = (peer, channelUrl) => {
-  return new WHPPAdapter(peer, channelUrl);
+const WHPPAdapterFactory: AdapterFactoryFunction = (peer, channelUrl, onError) => {
+  return new WHPPAdapter(peer, channelUrl, onError);
 }
 
-const EyevinnAdapterFactory: AdapterFactoryFunction = (peer, channelUrl) => {
-  return new EyevinnAdapter(peer, channelUrl);
+const EyevinnAdapterFactory: AdapterFactoryFunction = (peer, channelUrl, onError) => {
+  return new EyevinnAdapter(peer, channelUrl, onError);
 }
 
-const WHEPAdapterFactory: AdapterFactoryFunction = (peer, channelUrl) => {
-  return new WHEPAdapter(peer, channelUrl);
+const WHEPAdapterFactory: AdapterFactoryFunction = (peer, channelUrl, onError) => {
+  return new WHEPAdapter(peer, channelUrl, onError);
 }
 
 const adapters = {
@@ -25,8 +25,11 @@ const adapters = {
   "whep": WHEPAdapterFactory,
 };
 
-export function AdapterFactory(type: string, peer: RTCPeerConnection, channelUrl: URL): Adapter {  
-  return adapters[type](peer, channelUrl);
+export function AdapterFactory(type: string, 
+  peer: RTCPeerConnection, channelUrl: URL, 
+  onError: (error: string) => void): Adapter 
+{  
+  return adapters[type](peer, channelUrl, onError);
 }
 
 export function ListAvailableAdapters(): string[] {

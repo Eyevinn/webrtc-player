@@ -7,5 +7,6 @@ export interface AdapterConnectOptions {
 export interface Adapter{
     enableDebug();
     getPeer() : RTCPeerConnection;
+    resetPeer(newPeer: RTCPeerConnection);
     connect(opts?: AdapterConnectOptions);
 }
