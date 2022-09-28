@@ -1,6 +1,7 @@
 import { WebRTCPlayer, ListAvailableAdapters } from "../src/index";
 
 const BROADCASTER_URL = process.env.BROADCASTER_URL || "https://broadcaster.lab.sto.eyevinn.technology:8443/broadcaster";
+const WHEP_URL = process.env.WHEP_URL || "https://wrtc-edge.lab.sto.eyevinn.technology:8443/whep/channel/sthlm"
 
 async function getChannels(broadcasterUrl) {
   const response = await fetch(broadcasterUrl + "/channel");
@@ -28,6 +29,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
     inputContainer.style.display = "block";
   } else {
+    if (type === "whep") {
+      input.value = WHEP_URL;
+    }
     inputContainer.style.display = "block";
   }
 
