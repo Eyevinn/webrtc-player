@@ -7,13 +7,17 @@ export class WHPPAdapter implements Adapter {
   private channelUrl: URL;
   private debug: boolean;
 
-  constructor(peer: RTCPeerConnection, channelUrl: URL) {
-    this.localPeer = peer;
+  constructor(peer: RTCPeerConnection, channelUrl: URL, onError: (error: string) => void) {
     this.channelUrl = channelUrl;
+    this.resetPeer(peer);
   }
 
   enableDebug() {
     this.debug = true;
+  }
+
+  resetPeer(newPeer: RTCPeerConnection) {
+    this.localPeer = newPeer;
   }
 
   getPeer(): RTCPeerConnection {

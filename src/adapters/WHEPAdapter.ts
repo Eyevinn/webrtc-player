@@ -15,31 +15,52 @@ export class WHEPAdapter implements Adapter {
   private waitingForCandidates: boolean;
   private iceGatheringTimeout: any;
   private resource: string;
+  private onErrorHandler: (error: string) => void;
 
-  constructor(peer: RTCPeerConnection, channelUrl: URL, whepType: WHEPType = WHEPType.Client) {
-    this.localPeer = peer;
+  constructor(peer: RTCPeerConnection, channelUrl: URL, onError: (error: string) => void) {
     this.channelUrl = channelUrl;
-    this.whepType = whepType;
+    this.whepType = WHEPType.Client;
 
-    this.localPeer.onicegatheringstatechange = this.onIceGatheringStateChange.bind(this);
-    this.localPeer.onicecandidate = this.onIceCandidate.bind(this);
+    this.onErrorHandler = onError;
+    this.resetPeer(peer);
   }
 
   enableDebug() {
     this.debug = true;
   }
 
+  resetPeer(newPeer: RTCPeerConnection) {
+    this.localPeer = newPeer;
+    this.localPeer.onicegatheringstatechange = this.onIceGatheringStateChange.bind(this);
+    this.localPeer.onicecandidate = this.onIceCandidate.bind(this);
+  }
+
   getPeer(): RTCPeerConnection {
     return this.localPeer;
   }
 
-  async connect(opts?: AdapterConnectOptions) {
-    this.localPeer.addTransceiver('video', { direction: 'recvonly' });
-    this.localPeer.addTransceiver('audio', { direction: 'recvonly' });
-        
+  async connect(opts?: AdapterConnectOptions) {    
+    await this.initSdpExchange();
+  }
+
+  private async initSdpExchange() {
+    clearTimeout(this.iceGatheringTimeout);
+
     if (this.whepType === WHEPType.Client) {
+      this.localPeer.addTransceiver('video', { direction: 'recvonly' });
+      this.localPeer.addTransceiver('audio', { direction: 'recvonly' });        
       const offer = await this.localPeer.createOffer();      
       await this.localPeer.setLocalDescription(offer);
+      this.waitingForCandidates = true;
+      this.iceGatheringTimeout = setTimeout(this.onIceGatheringTimeout.bind(this), DEFAULT_CONNECT_TIMEOUT);
+    } else {
+      const offer = await this.requestOffer();
+      await this.localPeer.setRemoteDescription({
+        type: "offer",
+        sdp: offer,
+      });
+      const answer = await this.localPeer.createAnswer();
+      await this.localPeer.setLocalDescription(answer);
       this.waitingForCandidates = true;
       this.iceGatheringTimeout = setTimeout(this.onIceGatheringTimeout.bind(this), DEFAULT_CONNECT_TIMEOUT);
     }
@@ -83,6 +104,42 @@ export class WHEPAdapter implements Adapter {
     
     if (this.whepType === WHEPType.Client) {
       await this.sendOffer();
+    } else {
+      await this.sendAnswer();
+    }
+  }
+
+  private async requestOffer() {
+    if (this.whepType === WHEPType.Server) {
+      const response = await fetch(this.channelUrl.href, {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/sdp'
+        },
+        body: ""
+      });
+      if (response.ok) {
+        this.resource = response.headers.get("Location");
+        this.log("WHEP Resource", this.resource);
+        const offer = await response.text();
+        return offer;
+      }
+    }
+  }
+
+  private async sendAnswer() {
+    if (this.whepType === WHEPType.Server) {
+      const answer = this.localPeer.localDescription;
+      const response = await fetch(this.resource, {
+        method: "PATCH",
+        headers: {
+          'Content-Type': 'application/sdp'          
+        },
+        body: answer.sdp
+      });
+      if (!response.ok) {
+        this.error(`sendAnswer response: ${response.status}`);
+      }
     }
   }
 
@@ -106,6 +163,10 @@ export class WHEPAdapter implements Adapter {
           type: "answer",
           sdp: answer,
         });
+      } else if (response.status === 400) {
+        this.log(`server does not support client-offer, need to reconnect`);
+        this.whepType = WHEPType.Server;
+        this.onErrorHandler("reconnectneeded");
       } else {
         this.error(`sendAnswer response: ${response.status}`);
       }
