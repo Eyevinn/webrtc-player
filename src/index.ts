@@ -28,6 +28,7 @@ export class WebRTCPlayer extends EventEmitter {
   private csaiManager?: CSAIManager;
   private stream: MediaStream;
   private adapter: Adapter;
+  private remoteMediaStreams: Set<string> = new Set();
 
   constructor(opts: WebRTCPlayerOptions) {
     super();
@@ -97,6 +98,7 @@ export class WebRTCPlayer extends EventEmitter {
       case "reconnectneeded":
         this.peer && this.peer.close();
         this.videoElement.srcObject = undefined;
+        this.remoteMediaStreams.clear();
         this.setupPeer();
         this.adapter.resetPeer(this.peer);
         this.adapter.connect();
@@ -105,29 +107,23 @@ export class WebRTCPlayer extends EventEmitter {
   }
 
   private setupPeer() {
-    this.stream = new MediaStream();
     this.peer = new RTCPeerConnection({ iceServers: this.iceServers });
     this.peer.onconnectionstatechange = this.onConnectionStateChange.bind(this);
     this.peer.ontrack = this.onTrack.bind(this);
   }
 
-  private onTrack(ev) {
-    const track = ev.track;
-    switch (track.kind) {
-      case 'video':
-        if (track.label !== 'feedbackvideolabel') {
-          const newTrack = track.clone();
-          this.log("Adding video track", newTrack);
-          this.stream.addTrack(newTrack);
-        }
-        break;
-      case 'audio':
-        const newTrack = track.clone();
-        this.log("Adding audio track", newTrack);
-        this.stream.addTrack(newTrack);
-        break;
-      default:
-        this.log('unknown track', track);
+  private onTrack(event: RTCTrackEvent) {
+    for (let stream of event.streams) {
+      console.log('Got remote stream ' + stream.id, ' audio ' + stream.getAudioTracks().length + ' video ' + stream.getVideoTracks().length);
+      if (this.remoteMediaStreams.has(stream.id) || stream.getAudioTracks().length === 0 || stream.getVideoTracks().length === 0) {
+          continue;
+      }
+
+      this.remoteMediaStreams.add(stream.id);
+      console.log('Added remote stream ' + stream.id, ' audio ' + stream.getAudioTracks().length + ' video ' + stream.getVideoTracks().length);
+
+      this.videoElement.srcObject = stream;
+      console.log(`Set srcObject of videoElement to ${stream.id}`);
     }
   }
 
