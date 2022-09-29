@@ -26,7 +26,6 @@ export class WebRTCPlayer extends EventEmitter {
   private channelUrl: URL;
   private reconnectAttemptsLeft: number = RECONNECT_ATTEMPTS;
   private csaiManager?: CSAIManager;
-  private stream: MediaStream;
   private adapter: Adapter;
   private remoteMediaStreams: Set<string> = new Set();
 
@@ -87,7 +86,6 @@ export class WebRTCPlayer extends EventEmitter {
       this.reconnectAttemptsLeft = RECONNECT_ATTEMPTS;
       if (!this.videoElement.srcObject) {
         this.log("Updating video element srcobject");
-				this.videoElement.srcObject = this.stream;
 			}
     }
   }
