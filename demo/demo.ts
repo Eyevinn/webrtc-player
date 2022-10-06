@@ -74,6 +74,18 @@ window.addEventListener("DOMContentLoaded", async () => {
       vmapUrl: vmapUrl,
     });
 
+    player.on("stats:candidate-pair", (report) => {
+      if (report.nominated) {
+        //console.log(report);
+        document.querySelector<HTMLSpanElement>("#stats-current-rtt").innerHTML =
+          `RTT: ${report.currentRoundTripTime * 1000}ms`;
+        if (report.availableIncomingBitrate) {
+          document.querySelector<HTMLSpanElement>("#stats-incoming-bitrate").innerHTML =
+            `Bitrate: ${Math.round(report.availableIncomingBitrate / 1000)}kbps`;
+        }
+      }
+    });
+
     await player.load(new URL(channelUrl));
   });
 });

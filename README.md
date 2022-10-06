@@ -34,6 +34,13 @@ ICE_SERVERS=turn:<USERNAME>:<SECRET>@turn.eyevinn.technology:3478 npm run dev
   const player = new WebRTCPlayer({ video: video, type: "se.eyevinn.whpp" });
   await player.load(new URL(channelUrl));
   player.unmute();
+
+  // Subscribe for RTC stats: `stats:${RTCStatsType}`
+  player.on("stats:inbound-rtp", (report) => {
+    if (report.kind === "video") {
+      console.log(report);
+    }
+  });
 ```
 
 ## Options

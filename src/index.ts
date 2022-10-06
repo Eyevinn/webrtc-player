@@ -28,6 +28,7 @@ export class WebRTCPlayer extends EventEmitter {
   private csaiManager?: CSAIManager;
   private stream: MediaStream;
   private adapter: Adapter;
+  private statsInterval: any;
 
   constructor(opts: WebRTCPlayerOptions) {
     super();
@@ -104,6 +105,16 @@ export class WebRTCPlayer extends EventEmitter {
     }
   }
 
+  private onConnectionStats() {
+    if (this.peer) {
+      this.peer.getStats(null).then((stats) => {
+        stats.forEach((report) => {
+          this.emit(`stats:${report.type}`, report);
+        });
+      });
+    }
+  }
+
   private setupPeer() {
     this.stream = new MediaStream();
     this.peer = new RTCPeerConnection({ iceServers: this.iceServers });
@@ -149,6 +160,7 @@ export class WebRTCPlayer extends EventEmitter {
       this.adapter.enableDebug();
     }
     
+    this.statsInterval = setInterval(this.onConnectionStats.bind(this), 5000);
     await this.adapter.connect();
   }
 
@@ -161,6 +173,7 @@ export class WebRTCPlayer extends EventEmitter {
   }
 
   stop() {
+    clearInterval(this.statsInterval);
     this.peer.close(); 
     this.videoElement.src = null;
     this.videoElement.load();
