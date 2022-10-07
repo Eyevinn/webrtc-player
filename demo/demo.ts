@@ -72,17 +72,26 @@ window.addEventListener("DOMContentLoaded", async () => {
       iceServers: iceServers, 
       debug: true,
       vmapUrl: vmapUrl,
+      statsTypeFilter: "^candidate-*|^inbound-rtp"
     });
+
+    let packetsLost = { video: 0, audio: 0 };
 
     player.on("stats:candidate-pair", (report) => {
       if (report.nominated) {
-        //console.log(report);
         document.querySelector<HTMLSpanElement>("#stats-current-rtt").innerHTML =
           `RTT: ${report.currentRoundTripTime * 1000}ms`;
         if (report.availableIncomingBitrate) {
           document.querySelector<HTMLSpanElement>("#stats-incoming-bitrate").innerHTML =
             `Bitrate: ${Math.round(report.availableIncomingBitrate / 1000)}kbps`;
         }
+      }
+    });
+    player.on("stats:inbound-rtp", (report) => {
+      if (report.kind === "video" || report.kind === "audio") {
+        packetsLost[report.kind] = report.packetsLost;
+        document.querySelector<HTMLSpanElement>("#stats-packetloss").innerHTML =
+          `Packets Lost: A=${packetsLost.audio},V=${packetsLost.video}`;
       }
     });
 

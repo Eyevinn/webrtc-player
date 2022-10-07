@@ -12,6 +12,7 @@ interface WebRTCPlayerOptions {
   iceServers?: RTCIceServer[];
   debug?: boolean;
   vmapUrl?: string;
+  statsTypeFilter?: string; // regexp
 }
 
 const RECONNECT_ATTEMPTS = 2;
@@ -29,12 +30,14 @@ export class WebRTCPlayer extends EventEmitter {
   private stream: MediaStream;
   private adapter: Adapter;
   private statsInterval: any;
+  private statsTypeFilter: string;
 
   constructor(opts: WebRTCPlayerOptions) {
     super();
     this.videoElement = opts.video;
     this.adapterType = opts.type;
     this.adapterFactory = opts.adapterFactory;
+    this.statsTypeFilter = opts.statsTypeFilter;
 
     this.iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
     if (opts.iceServers) {
@@ -105,12 +108,13 @@ export class WebRTCPlayer extends EventEmitter {
     }
   }
 
-  private onConnectionStats() {
-    if (this.peer) {
-      this.peer.getStats(null).then((stats) => {
-        stats.forEach((report) => {
+  private async onConnectionStats() {
+    if (this.peer && this.statsTypeFilter) {
+      let stats = await this.peer.getStats(null);
+      stats.forEach((report) => {
+        if (report.type.match(this.statsTypeFilter)) {
           this.emit(`stats:${report.type}`, report);
-        });
+        }
       });
     }
   }
