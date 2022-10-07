@@ -31,9 +31,20 @@ ICE_SERVERS=turn:<USERNAME>:<SECRET>@turn.eyevinn.technology:3478 npm run dev
   import { WebRTCPlayer } from "@eyevinn/webrtc-player";
 
   const video = document.querySelector("video");
-  const player = new WebRTCPlayer({ video: video, type: "se.eyevinn.whpp" });
+  const player = new WebRTCPlayer({ 
+    video: video, 
+    type: "whep",
+    statsTypeFilter: "^candidate-*|^inbound-rtp"     
+  });
   await player.load(new URL(channelUrl));
   player.unmute();
+
+  // Subscribe for RTC stats: `stats:${RTCStatsType}`
+  player.on("stats:inbound-rtp", (report) => {
+    if (report.kind === "video") {
+      console.log(report);
+    }
+  });
 ```
 
 ## Options
@@ -45,6 +56,7 @@ ICE_SERVERS=turn:<USERNAME>:<SECRET>@turn.eyevinn.technology:3478 npm run dev
   type: string; // type of adapter (see below for a list of included adapters below)
   adapterFactory: AdapterFactoryFunction; // provide a custom adapter factory when adapter type is "custom"
   vmapUrl?: string; // url to endpoint to obtain VMAP XML (ads)
+  statsTypeFilter?: string; // regexp to match what RTC stats events will be emitted
 }
 ```
 

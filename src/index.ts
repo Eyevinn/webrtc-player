@@ -12,6 +12,7 @@ interface WebRTCPlayerOptions {
   iceServers?: RTCIceServer[];
   debug?: boolean;
   vmapUrl?: string;
+  statsTypeFilter?: string; // regexp
 }
 
 const RECONNECT_ATTEMPTS = 2;
@@ -28,12 +29,15 @@ export class WebRTCPlayer extends EventEmitter {
   private csaiManager?: CSAIManager;
   private stream: MediaStream;
   private adapter: Adapter;
+  private statsInterval: any;
+  private statsTypeFilter: string;
 
   constructor(opts: WebRTCPlayerOptions) {
     super();
     this.videoElement = opts.video;
     this.adapterType = opts.type;
     this.adapterFactory = opts.adapterFactory;
+    this.statsTypeFilter = opts.statsTypeFilter;
 
     this.iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
     if (opts.iceServers) {
@@ -104,6 +108,17 @@ export class WebRTCPlayer extends EventEmitter {
     }
   }
 
+  private async onConnectionStats() {
+    if (this.peer && this.statsTypeFilter) {
+      let stats = await this.peer.getStats(null);
+      stats.forEach((report) => {
+        if (report.type.match(this.statsTypeFilter)) {
+          this.emit(`stats:${report.type}`, report);
+        }
+      });
+    }
+  }
+
   private setupPeer() {
     this.stream = new MediaStream();
     this.peer = new RTCPeerConnection({ iceServers: this.iceServers });
@@ -149,6 +164,7 @@ export class WebRTCPlayer extends EventEmitter {
       this.adapter.enableDebug();
     }
     
+    this.statsInterval = setInterval(this.onConnectionStats.bind(this), 5000);
     await this.adapter.connect();
   }
 
@@ -161,6 +177,7 @@ export class WebRTCPlayer extends EventEmitter {
   }
 
   stop() {
+    clearInterval(this.statsInterval);
     this.peer.close(); 
     this.videoElement.src = null;
     this.videoElement.load();

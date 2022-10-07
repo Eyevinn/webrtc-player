@@ -30,6 +30,11 @@
       #preroll {
         width: 20px;
       }
+      #stats {
+        font-size: 0.6em;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+      }
     </style>
   </head>
   <body>
@@ -51,6 +56,11 @@
       <div id="videocontainer">
         <video autoplay muted controls playsinline></video>
       </div>
+    </section>
+    <section id="stats">
+      <span id="stats-current-rtt"></span>
+      <span id="stats-incoming-bitrate"></span>
+      <span id="stats-packetloss"></span>
     </section>
     <footer>
       <p>
