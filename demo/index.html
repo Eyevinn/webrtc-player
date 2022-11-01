@@ -35,6 +35,10 @@
         display: grid;
         grid-template-columns: 1fr 1fr 1fr;
       }
+      #wallclock {
+        text-align: center;
+        display: grid;
+      }
     </style>
   </head>
   <body>
@@ -55,6 +59,16 @@
       </div>
       <div id="videocontainer">
         <video autoplay muted controls playsinline></video>
+      </div>
+      <div id="wallclock">
+        <span id="Stockholm_z72a"></span>
+        <span style="font-size: 8pt" rel="nofollow">Atomic Wall clock provided by <a href="https://time.is/" id="time_is_link">time.is</a></span>
+        <script src="//widget.time.is/t.js"></script>
+        <script>
+          time_is_widget.init({
+            Stockholm_z72a: {} 
+          });
+        </script>      
       </div>
     </section>
     <section id="stats">
