@@ -12,6 +12,20 @@ async function getChannels(broadcasterUrl) {
   return [];
 }
 
+let clientTimeMsElement;
+
+function pad(v: number, n: number) {
+  for (var r = v.toString(); r.length < n; r = 0 + r);
+  return r;
+}
+
+function updateClientClock() {
+  const now = new Date();
+  const [h, m, s, ms] = [now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds()];
+  const ts = `${pad(h, 2)}:${pad(m, 2)}:${pad(s, 2)}.${pad(ms, 3)}`;
+  clientTimeMsElement.innerHTML = ts;
+}
+
 window.addEventListener("DOMContentLoaded", async () => {
   const input = document.querySelector<HTMLInputElement>("#channelUrl");
   const video = document.querySelector("video");
@@ -97,4 +111,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     await player.load(new URL(channelUrl));
   });
+
+  clientTimeMsElement = document.querySelector<HTMLSpanElement>("#localTimeMs");
+  window.setInterval(updateClientClock, 1);
 });
