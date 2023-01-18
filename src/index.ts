@@ -27,7 +27,6 @@ export class WebRTCPlayer extends EventEmitter {
   private channelUrl: URL;
   private reconnectAttemptsLeft: number = RECONNECT_ATTEMPTS;
   private csaiManager?: CSAIManager;
-  private stream: MediaStream;
   private adapter: Adapter;
   private statsInterval: any;
   private statsTypeFilter: string;
@@ -72,7 +71,7 @@ export class WebRTCPlayer extends EventEmitter {
     console.error("WebRTC-player", ...args);
   }
 
-  private onConnectionStateChange(e) {
+  private async onConnectionStateChange(e) {
     if (this.peer.connectionState === 'failed') {
       this.peer && this.peer.close();
 
@@ -82,16 +81,12 @@ export class WebRTCPlayer extends EventEmitter {
       }
 
       this.log(`Connection failed, recreating peer connection, attempts left ${this.reconnectAttemptsLeft}`);
-      this.connect();
+      await this.connect();
       this.reconnectAttemptsLeft--;
 
     } else if (this.peer.connectionState === 'connected') {
       this.log("Connected");
       this.reconnectAttemptsLeft = RECONNECT_ATTEMPTS;
-      if (!this.videoElement.srcObject) {
-        this.log("Updating video element srcobject");
-				this.videoElement.srcObject = this.stream;
-			}
     }
   }
 
@@ -120,29 +115,19 @@ export class WebRTCPlayer extends EventEmitter {
   }
 
   private setupPeer() {
-    this.stream = new MediaStream();
     this.peer = new RTCPeerConnection({ iceServers: this.iceServers });
     this.peer.onconnectionstatechange = this.onConnectionStateChange.bind(this);
     this.peer.ontrack = this.onTrack.bind(this);
   }
 
-  private onTrack(ev) {
-    const track = ev.track;
-    switch (track.kind) {
-      case 'video':
-        if (track.label !== 'feedbackvideolabel') {
-          const newTrack = track.clone();
-          this.log("Adding video track", newTrack);
-          this.stream.addTrack(newTrack);
-        }
-        break;
-      case 'audio':
-        const newTrack = track.clone();
-        this.log("Adding audio track", newTrack);
-        this.stream.addTrack(newTrack);
-        break;
-      default:
-        this.log('unknown track', track);
+  private onTrack(event: RTCTrackEvent) {
+    for (let stream of event.streams) {
+      if (stream.id === 'feedbackvideomslabel' || this.videoElement.srcObject) {
+        continue;
+      }
+
+      console.log('Set video element remote stream to ' + stream.id, ' audio ' + stream.getAudioTracks().length + ' video ' + stream.getVideoTracks().length);
+      this.videoElement.srcObject = stream;
     }
   }
 
