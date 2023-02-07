@@ -1,7 +1,7 @@
 import { Adapter } from "./adapters/Adapter";
 import { AdapterFactory, AdapterFactoryFunction } from "./adapters/AdapterFactory";
 import { EventEmitter } from "events";
-import { CSAIManager } from "@eyevinn/csai-manager";
+import { CSAIManager } from "@eyevinn/csai-manager";
 
 export { ListAvailableAdapters } from "./adapters/AdapterFactory";
 
@@ -72,6 +72,19 @@ export class WebRTCPlayer extends EventEmitter {
   }
 
   private async onConnectionStateChange(e) {
+
+    if (this.peer.connectionState === 'connected') {
+      const senders = await this.peer.getSenders();
+      if (senders) {
+        senders.forEach(sender => {
+          if (sender.track.readyState === 'ended') {
+            this.log('Track ended', e);
+            return;
+          }
+        });
+      }
+    }
+
     if (this.peer.connectionState === 'failed') {
       this.peer && this.peer.close();
 
@@ -92,7 +105,7 @@ export class WebRTCPlayer extends EventEmitter {
 
   private onErrorHandler(error: string) {
     this.log(`onError=${error}`);
-    switch(error) {
+    switch (error) {
       case "reconnectneeded":
         this.peer && this.peer.close();
         this.videoElement.srcObject = undefined;
@@ -133,12 +146,12 @@ export class WebRTCPlayer extends EventEmitter {
 
   private async connect() {
     this.setupPeer();
-   
+
     if (this.adapterType !== "custom") {
-      this.adapter = AdapterFactory(this.adapterType, 
+      this.adapter = AdapterFactory(this.adapterType,
         this.peer, this.channelUrl, this.onErrorHandler.bind(this));
     } else if (this.adapterFactory) {
-      this.adapter = this.adapterFactory(this.peer, this.channelUrl, 
+      this.adapter = this.adapterFactory(this.peer, this.channelUrl,
         this.onErrorHandler.bind(this));
     }
     if (!this.adapter) {
@@ -148,7 +161,7 @@ export class WebRTCPlayer extends EventEmitter {
     if (this.debug) {
       this.adapter.enableDebug();
     }
-    
+
     this.statsInterval = setInterval(this.onConnectionStats.bind(this), 5000);
     await this.adapter.connect();
   }
@@ -163,7 +176,7 @@ export class WebRTCPlayer extends EventEmitter {
 
   stop() {
     clearInterval(this.statsInterval);
-    this.peer.close(); 
+    this.peer.close();
     this.videoElement.src = null;
     this.videoElement.load();
   }
