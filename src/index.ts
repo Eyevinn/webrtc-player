@@ -1,7 +1,7 @@
 import { Adapter } from "./adapters/Adapter";
 import { AdapterFactory, AdapterFactoryFunction } from "./adapters/AdapterFactory";
 import { EventEmitter } from "events";
-import { CSAIManager } from "@eyevinn/csai-manager";
+import { CSAIManager } from "@eyevinn/csai-manager";
 
 export { ListAvailableAdapters } from "./adapters/AdapterFactory";
 
@@ -164,7 +164,7 @@ export class WebRTCPlayer extends EventEmitter {
   stop() {
     clearInterval(this.statsInterval);
     this.peer.close(); 
-    this.videoElement.src = null;
+    this.videoElement.srcObject = undefined;
     this.videoElement.load();
   }
 
