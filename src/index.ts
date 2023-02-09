@@ -73,18 +73,6 @@ export class WebRTCPlayer extends EventEmitter {
 
   private async onConnectionStateChange(e) {
 
-    if (this.peer.connectionState === 'connected') {
-      const senders = await this.peer.getSenders();
-      if (senders) {
-        senders.forEach(sender => {
-          if (sender.track.readyState === 'ended') {
-            this.log('Track ended', e);
-            return;
-          }
-        });
-      }
-    }
-
     if (this.peer.connectionState === 'failed') {
       this.peer && this.peer.close();
 
@@ -123,6 +111,13 @@ export class WebRTCPlayer extends EventEmitter {
         if (report.type.match(this.statsTypeFilter)) {
           this.emit(`stats:${report.type}`, report);
         }
+
+        if (report.type.match('inbound-rtp')) {
+          if (report.bytesReceived === '0'){
+            this.emit(`stats:${report.type}`, report);
+          }
+        }
+
       });
     }
   }
