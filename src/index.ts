@@ -13,6 +13,8 @@ interface WebRTCPlayerOptions {
   debug?: boolean;
   vmapUrl?: string;
   statsTypeFilter?: string; // regexp
+  detectTimeout?: boolean;
+  timeoutThreshold?: number;
 }
 
 const RECONNECT_ATTEMPTS = 2;
@@ -30,6 +32,8 @@ export class WebRTCPlayer extends EventEmitter {
   private adapter: Adapter;
   private statsInterval: any;
   private statsTypeFilter: string;
+  private detectMediaTimeout: boolean = false;
+  private mediaTimeoutThreshold: number = 30000;
   private bytesReceived: number = 0;
 
   constructor(opts: WebRTCPlayerOptions) {
@@ -38,6 +42,8 @@ export class WebRTCPlayer extends EventEmitter {
     this.adapterType = opts.type;
     this.adapterFactory = opts.adapterFactory;
     this.statsTypeFilter = opts.statsTypeFilter;
+    this.detectMediaTimeout = opts.detectTimeout;
+    this.mediaTimeoutThreshold = opts.timeoutThreshold;
 
     this.iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
     if (opts.iceServers) {
