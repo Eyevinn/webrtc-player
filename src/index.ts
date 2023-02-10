@@ -30,6 +30,7 @@ export class WebRTCPlayer extends EventEmitter {
   private adapter: Adapter;
   private statsInterval: any;
   private statsTypeFilter: string;
+  private bytesReceived: number = 0;
 
   constructor(opts: WebRTCPlayerOptions) {
     super();
@@ -104,8 +105,10 @@ export class WebRTCPlayer extends EventEmitter {
     }
   }
 
-  private async onConnectionStats() {
+  private async onConnectionStats() { 
+    
     if (this.peer && this.statsTypeFilter) {
+      let bytesReceivedBlock: number = 0;
       let stats = await this.peer.getStats(null);
       stats.forEach((report) => {
         if (report.type.match(this.statsTypeFilter)) {
@@ -113,12 +116,18 @@ export class WebRTCPlayer extends EventEmitter {
         }
 
         if (report.type.match('inbound-rtp')) {
-          if (report.bytesReceived === '0'){
             this.emit(`stats:${report.type}`, report);
-          }
+            bytesReceivedBlock += report.bytesReceived;
         }
 
       });
+
+      if (bytesReceivedBlock <= this.bytesReceived) {
+        this.emit('media reception ended');
+      }
+      else {
+        this.bytesReceived = bytesReceivedBlock;
+      }
     }
   }
 
