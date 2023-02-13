@@ -121,19 +121,20 @@ export class WebRTCPlayer extends EventEmitter {
           this.emit(`stats:${report.type}`, report);
         }
 
-        if (report.type.match('inbound-rtp')) {
+        if (this.detectMediaTimeout == true && report.lastPacketReceivedTimestamp >= this.mediaTimeoutThreshold && report.type.match('inbound-rtp') ) {
+
             this.emit(`stats:${report.type}`, report);
             bytesReceivedBlock += report.bytesReceived;
+
+            if (bytesReceivedBlock <= this.bytesReceived) {
+              this.emit('media reception ended');
+            }
+            else {
+              this.bytesReceived = bytesReceivedBlock;
+            }
         }
 
       });
-
-      if (bytesReceivedBlock <= this.bytesReceived) {
-        this.emit('media reception ended');
-      }
-      else {
-        this.bytesReceived = bytesReceivedBlock;
-      }
     }
   }
 
