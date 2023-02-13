@@ -32,8 +32,10 @@ export class WebRTCPlayer extends EventEmitter {
   private adapter: Adapter;
   private statsInterval: any;
   private statsTypeFilter: string;
+  private msStatsInterval: number = 5000;
   private detectMediaTimeout: boolean = false;
   private mediaTimeoutThreshold: number = 30000;
+  private timeoutThresholdCounter: number = 0;
   private bytesReceived: number = 0;
 
   constructor(opts: WebRTCPlayerOptions) {
@@ -121,20 +123,28 @@ export class WebRTCPlayer extends EventEmitter {
           this.emit(`stats:${report.type}`, report);
         }
 
-        if (this.detectMediaTimeout == true && report.lastPacketReceivedTimestamp >= this.mediaTimeoutThreshold && report.type.match('inbound-rtp') ) {
+        //remove before commit
+        this.detectMediaTimeout = true;
+        //
 
-            this.emit(`stats:${report.type}`, report);
-            bytesReceivedBlock += report.bytesReceived;
-
-            if (bytesReceivedBlock <= this.bytesReceived) {
-              this.emit('media reception ended');
-            }
-            else {
-              this.bytesReceived = bytesReceivedBlock;
-            }
+        if (this.detectMediaTimeout == true && report.type.match('inbound-rtp') ) { 
+          this.emit(`stats:${report.type}`, report);
+          bytesReceivedBlock += report.bytesReceived;
         }
-
       });
+
+      if (bytesReceivedBlock <= this.bytesReceived) {
+        this.timeoutThresholdCounter += this.msStatsInterval;
+        if(this.timeoutThresholdCounter >= this.mediaTimeoutThreshold)
+        {
+          this.emit('no-media');
+          console.log("no-media")
+        }
+       
+      }
+      else {
+        this.bytesReceived = bytesReceivedBlock;
+      }
     }
   }
 
@@ -173,7 +183,7 @@ export class WebRTCPlayer extends EventEmitter {
       this.adapter.enableDebug();
     }
 
-    this.statsInterval = setInterval(this.onConnectionStats.bind(this), 5000);
+    this.statsInterval = setInterval(this.onConnectionStats.bind(this), this.msStatsInterval);
     await this.adapter.connect();
   }
 
