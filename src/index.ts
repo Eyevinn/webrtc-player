@@ -5,6 +5,11 @@ import { CSAIManager } from "@eyevinn/csai-manager";
 
 export { ListAvailableAdapters } from "./adapters/AdapterFactory";
 
+enum Message {
+  NO_MEDIA = "no-media",
+  PEER_CONNECTION_FAILED = "peer-connection-failed"
+}
+
 interface WebRTCPlayerOptions {
   video: HTMLVideoElement;
   type: string;
@@ -49,7 +54,6 @@ export class WebRTCPlayer extends EventEmitter {
     if(opts.timeoutThreshold){
       this.mediaTimeoutThreshold = opts.timeoutThreshold;
     }
-
     this.iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
     if (opts.iceServers) {
       this.iceServers = opts.iceServers;
@@ -86,6 +90,7 @@ export class WebRTCPlayer extends EventEmitter {
   private async onConnectionStateChange(e) {
 
     if (this.peer.connectionState === 'failed') {
+      this.emit(Message.PEER_CONNECTION_FAILED);
       this.peer && this.peer.close();
 
       if (this.reconnectAttemptsLeft <= 0) {
@@ -121,6 +126,7 @@ export class WebRTCPlayer extends EventEmitter {
     if (this.peer && this.statsTypeFilter) {
       let bytesReceivedBlock: number = 0;
       let stats = await this.peer.getStats(null);
+
       stats.forEach((report) => {
         if (report.type.match(this.statsTypeFilter)) {
           this.emit(`stats:${report.type}`, report);
@@ -134,12 +140,11 @@ export class WebRTCPlayer extends EventEmitter {
 
       if (bytesReceivedBlock <= this.bytesReceived) {
         this.timeoutThresholdCounter += this.msStatsInterval;
-        if(this.timeoutThresholdCounter >= this.mediaTimeoutThreshold)
-        {
-          this.emit('no-media');
+
+        if (this.timeoutThresholdCounter >= this.mediaTimeoutThreshold) {
+          this.emit(Message.NO_MEDIA);
           this.detectMediaTimeout = false;
         }
-       
       }
       else {
         this.bytesReceived = bytesReceivedBlock;
