@@ -45,7 +45,10 @@ export class WebRTCPlayer extends EventEmitter {
     this.adapterFactory = opts.adapterFactory;
     this.statsTypeFilter = opts.statsTypeFilter;
     this.detectMediaTimeout = opts.detectTimeout;
-    this.mediaTimeoutThreshold = opts.timeoutThreshold;
+
+    if(opts.timeoutThreshold){
+      this.mediaTimeoutThreshold = opts.timeoutThreshold;
+    }
 
     this.iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
     if (opts.iceServers) {
@@ -123,10 +126,6 @@ export class WebRTCPlayer extends EventEmitter {
           this.emit(`stats:${report.type}`, report);
         }
 
-        //remove before commit
-        this.detectMediaTimeout = true;
-        //
-
         if (this.detectMediaTimeout == true && report.type.match('inbound-rtp') ) { 
           this.emit(`stats:${report.type}`, report);
           bytesReceivedBlock += report.bytesReceived;
@@ -138,7 +137,7 @@ export class WebRTCPlayer extends EventEmitter {
         if(this.timeoutThresholdCounter >= this.mediaTimeoutThreshold)
         {
           this.emit('no-media');
-          console.log("no-media")
+          this.detectMediaTimeout = false;
         }
        
       }
