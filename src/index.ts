@@ -201,8 +201,8 @@ export class WebRTCPlayer extends EventEmitter {
 
   stop() {
     clearInterval(this.statsInterval);
-    this.peer.close();
-    this.videoElement.src = null;
+    this.peer.close(); 
+    this.videoElement.srcObject = undefined;
     this.videoElement.load();
   }
 
