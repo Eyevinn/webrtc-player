@@ -38,7 +38,7 @@ export class WebRTCPlayer extends EventEmitter {
   private statsInterval: any;
   private statsTypeFilter: string;
   private msStatsInterval: number = 5000;
-  private detectMediaTimeout: boolean = false;
+  private detectMediaTimeout: boolean = true;
   private mediaTimeoutThreshold: number = 30000;
   private timeoutThresholdCounter: number = 0;
   private bytesReceived: number = 0;
@@ -143,6 +143,8 @@ export class WebRTCPlayer extends EventEmitter {
 
           if (this.timeoutThresholdCounter >= this.mediaTimeoutThreshold) {
             this.emit(Message.NO_MEDIA);
+            console.log("no-media");
+            this.timeoutThresholdCounter = 0;
           }
         }
         else {
