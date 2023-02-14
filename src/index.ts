@@ -49,11 +49,9 @@ export class WebRTCPlayer extends EventEmitter {
     this.adapterType = opts.type;
     this.adapterFactory = opts.adapterFactory;
     this.statsTypeFilter = opts.statsTypeFilter;
-    this.detectMediaTimeout = opts.detectTimeout;
+    this.detectMediaTimeout = opts.detectTimeout ?? this.detectMediaTimeout;
+    this.mediaTimeoutThreshold = opts.timeoutThreshold ?? this.mediaTimeoutThreshold;
 
-    if(opts.timeoutThreshold){
-      this.mediaTimeoutThreshold = opts.timeoutThreshold;
-    }
     this.iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
     if (opts.iceServers) {
       this.iceServers = opts.iceServers;
@@ -138,16 +136,20 @@ export class WebRTCPlayer extends EventEmitter {
         }
       });
 
-      if (bytesReceivedBlock <= this.bytesReceived) {
-        this.timeoutThresholdCounter += this.msStatsInterval;
+      if(this.detectMediaTimeout == true) {
 
-        if (this.timeoutThresholdCounter >= this.mediaTimeoutThreshold) {
-          this.emit(Message.NO_MEDIA);
-          this.detectMediaTimeout = false;
+        if (bytesReceivedBlock <= this.bytesReceived) {
+          this.timeoutThresholdCounter += this.msStatsInterval;
+
+          if (this.timeoutThresholdCounter >= this.mediaTimeoutThreshold) {
+            this.emit(Message.NO_MEDIA);
+            console.log("no-media");
+          }
         }
-      }
-      else {
-        this.bytesReceived = bytesReceivedBlock;
+        else {
+          this.bytesReceived = bytesReceivedBlock;
+          this.timeoutThresholdCounter = 0;
+        }
       }
     }
   }
