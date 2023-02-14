@@ -143,7 +143,6 @@ export class WebRTCPlayer extends EventEmitter {
 
           if (this.timeoutThresholdCounter >= this.mediaTimeoutThreshold) {
             this.emit(Message.NO_MEDIA);
-            console.log("no-media");
           }
         }
         else {
