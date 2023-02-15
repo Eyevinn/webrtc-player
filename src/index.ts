@@ -7,6 +7,7 @@ export { ListAvailableAdapters } from "./adapters/AdapterFactory";
 
 enum Message {
   NO_MEDIA = "no-media",
+  MEDIA_RECOVERED = "media-recovered",
   PEER_CONNECTION_FAILED = "peer-connection-failed"
 }
 
@@ -38,7 +39,7 @@ export class WebRTCPlayer extends EventEmitter {
   private statsInterval: any;
   private statsTypeFilter: string;
   private msStatsInterval: number = 5000;
-  private detectMediaTimeout: boolean = false;
+  private mediaTimeoutOccured: boolean = false;
   private mediaTimeoutThreshold: number = 30000;
   private timeoutThresholdCounter: number = 0;
   private bytesReceived: number = 0;
@@ -49,7 +50,6 @@ export class WebRTCPlayer extends EventEmitter {
     this.adapterType = opts.type;
     this.adapterFactory = opts.adapterFactory;
     this.statsTypeFilter = opts.statsTypeFilter;
-    this.detectMediaTimeout = opts.detectTimeout ?? this.detectMediaTimeout;
     this.mediaTimeoutThreshold = opts.timeoutThreshold ?? this.mediaTimeoutThreshold;
 
     this.iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
@@ -130,25 +130,30 @@ export class WebRTCPlayer extends EventEmitter {
           this.emit(`stats:${report.type}`, report);
         }
 
-        if (this.detectMediaTimeout == true && report.type.match('inbound-rtp') ) { 
-          this.emit(`stats:${report.type}`, report);
+
+        //inbound-rtp attribute bytesReceived from stats report will contain the total number of bytes received for this SSRC.
+        //In this case there are several SSRCs. They are all added together in each onConnectionStats iteration and compared to their value during the previous iteration.
+
+        if (report.type.match('inbound-rtp') ) { 
           bytesReceivedBlock += report.bytesReceived;
         }
       });
 
-      if(this.detectMediaTimeout == true) {
+      if (bytesReceivedBlock <= this.bytesReceived) {
+        this.timeoutThresholdCounter += this.msStatsInterval;
 
-        if (bytesReceivedBlock <= this.bytesReceived) {
-          this.timeoutThresholdCounter += this.msStatsInterval;
-
-          if (this.timeoutThresholdCounter >= this.mediaTimeoutThreshold) {
-            this.emit(Message.NO_MEDIA);
-            this.timeoutThresholdCounter = 0;
-          }
+        if (this.mediaTimeoutOccured == false && this.timeoutThresholdCounter >= this.mediaTimeoutThreshold) {
+          this.emit(Message.NO_MEDIA);
+          this.mediaTimeoutOccured = true;
         }
-        else {
-          this.bytesReceived = bytesReceivedBlock;
-          this.timeoutThresholdCounter = 0;
+      }
+      else {
+        this.bytesReceived = bytesReceivedBlock;
+        this.timeoutThresholdCounter = 0;
+
+        if(this.mediaTimeoutOccured == true){
+          this.emit(Message.MEDIA_RECOVERED);
+          this.mediaTimeoutOccured = false;
         }
       }
     }
