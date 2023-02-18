@@ -39,12 +39,20 @@ ICE_SERVERS=turn:<USERNAME>:<SECRET>@turn.eyevinn.technology:3478 npm run dev
   await player.load(new URL(channelUrl));
   player.unmute();
 
+  player.on("no-media", () => {
+    console.log("media timeout occured");
+  });
+  player.on("media-recovered", () => {
+    console.log("media recovered");
+  });
+
   // Subscribe for RTC stats: `stats:${RTCStatsType}`
   player.on("stats:inbound-rtp", (report) => {
     if (report.kind === "video") {
       console.log(report);
     }
   });
+
 ```
 
 ## Options
@@ -57,6 +65,7 @@ ICE_SERVERS=turn:<USERNAME>:<SECRET>@turn.eyevinn.technology:3478 npm run dev
   adapterFactory: AdapterFactoryFunction; // provide a custom adapter factory when adapter type is "custom"
   vmapUrl?: string; // url to endpoint to obtain VMAP XML (ads)
   statsTypeFilter?: string; // regexp to match what RTC stats events will be emitted
+  timeoutThreshold?: number; // timeout in ms until no-media event is emitted (default 30000 ms)
 }
 ```
 
