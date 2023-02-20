@@ -1,7 +1,6 @@
-import { Adapter, AdapterConnectOptions } from './Adapter'
+import { Adapter, AdapterConnectOptions } from './Adapter';
 
 const DEFAULT_CONNECT_TIMEOUT = 2000;
-
 
 export class EyevinnAdapter implements Adapter {
   private localPeer: RTCPeerConnection;
@@ -11,7 +10,11 @@ export class EyevinnAdapter implements Adapter {
   private waitingForCandidates: boolean = false;
   private resourceUrl: URL | undefined = undefined;
 
-  constructor(peer: RTCPeerConnection, channelUrl: URL, onError: (error: string) => void) {
+  constructor(
+    peer: RTCPeerConnection,
+    channelUrl: URL,
+    onError: (error: string) => void
+  ) {
     this.channelUrl = channelUrl;
     this.debug = true;
     this.resetPeer(peer);
@@ -23,7 +26,8 @@ export class EyevinnAdapter implements Adapter {
 
   resetPeer(newPeer: RTCPeerConnection) {
     this.localPeer = newPeer;
-    this.localPeer.onicegatheringstatechange = this.onIceGatheringStateChange.bind(this);
+    this.localPeer.onicegatheringstatechange =
+      this.onIceGatheringStateChange.bind(this);
     this.localPeer.oniceconnectionstatechange =
       this.onIceConnectionStateChange.bind(this);
     this.localPeer.onicecandidateerror = this.onIceCandidateError.bind(this);
@@ -35,33 +39,39 @@ export class EyevinnAdapter implements Adapter {
   }
 
   async connect(opts?: AdapterConnectOptions) {
-    this.localPeer.addTransceiver("video", { direction: "recvonly" });
-    this.localPeer.addTransceiver("audio", { direction: "recvonly" });
+    this.localPeer.addTransceiver('video', { direction: 'recvonly' });
+    this.localPeer.addTransceiver('audio', { direction: 'recvonly' });
 
     const offer = await this.localPeer.createOffer({
       offerToReceiveAudio: true,
-      offerToReceiveVideo: true,
+      offerToReceiveVideo: true
     });
     this.localPeer.setLocalDescription(offer);
 
     this.waitingForCandidates = true;
-    this.iceGatheringTimeout = setTimeout(this.onIceGatheringTimeout.bind(this), (opts && opts.timeout) || DEFAULT_CONNECT_TIMEOUT);
+    this.iceGatheringTimeout = setTimeout(
+      this.onIceGatheringTimeout.bind(this),
+      (opts && opts.timeout) || DEFAULT_CONNECT_TIMEOUT
+    );
   }
 
   private log(...args: any[]) {
     if (this.debug) {
-      console.log("WebRTC-player", ...args);
+      console.log('WebRTC-player', ...args);
     }
   }
 
   private error(...args: any[]) {
-    console.error("WebRTC-player", ...args);
+    console.error('WebRTC-player', ...args);
   }
 
   private onIceGatheringStateChange(event: Event) {
-    this.log("IceGatheringState", this.localPeer.iceGatheringState);
+    this.log('IceGatheringState', this.localPeer.iceGatheringState);
 
-    if (this.localPeer.iceGatheringState !== 'complete' || !this.waitingForCandidates) {
+    if (
+      this.localPeer.iceGatheringState !== 'complete' ||
+      !this.waitingForCandidates
+    ) {
       return;
     }
 
@@ -69,7 +79,7 @@ export class EyevinnAdapter implements Adapter {
   }
 
   private onIceConnectionStateChange(e) {
-    this.log("IceConnectionState", this.localPeer.iceConnectionState);
+    this.log('IceConnectionState', this.localPeer.iceConnectionState);
 
     if (this.localPeer.iceConnectionState === 'failed') {
       this.localPeer.close();
@@ -80,21 +90,21 @@ export class EyevinnAdapter implements Adapter {
     if (event.type !== 'icecandidate') {
       return;
     }
-    const candidateEvent = <RTCPeerConnectionIceEvent>(event);
+    const candidateEvent = <RTCPeerConnectionIceEvent>event;
     const candidate: RTCIceCandidate | null = candidateEvent.candidate;
     if (!candidate) {
       return;
     }
 
-    this.log("IceCandidate", candidate.candidate);
+    this.log('IceCandidate', candidate.candidate);
   }
 
   private onIceCandidateError(e) {
-    this.log("IceCandidateError", e);
+    this.log('IceCandidateError', e);
   }
 
   private onIceGatheringTimeout() {
-    this.log("IceGatheringTimeout");
+    this.log('IceGatheringTimeout');
 
     if (!this.waitingForCandidates) {
       return;
@@ -108,15 +118,15 @@ export class EyevinnAdapter implements Adapter {
     clearTimeout(this.iceGatheringTimeout);
 
     const response = await fetch(this.channelUrl.href, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ sdp: this.localPeer.localDescription.sdp })
-      });
-      if (response.ok) {
-        const { sdp } = await response.json();
-        this.localPeer.setRemoteDescription({ type: "answer", sdp: sdp });
-      }
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ sdp: this.localPeer.localDescription.sdp })
+    });
+    if (response.ok) {
+      const { sdp } = await response.json();
+      this.localPeer.setRemoteDescription({ type: 'answer', sdp: sdp });
+    }
   }
 }

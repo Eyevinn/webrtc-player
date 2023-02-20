@@ -7,6 +7,7 @@ Contributions are welcome, see below for more information.
 [Online Demo](https://webrtc.player.eyevinn.technology/)
 
 ![Screenshot of demo application](screenshot.png)
+
 ## Installation
 
 ```
@@ -28,31 +29,30 @@ ICE_SERVERS=turn:<USERNAME>:<SECRET>@turn.eyevinn.technology:3478 npm run dev
 ## Usage
 
 ```javascript
-  import { WebRTCPlayer } from "@eyevinn/webrtc-player";
+import { WebRTCPlayer } from '@eyevinn/webrtc-player';
 
-  const video = document.querySelector("video");
-  const player = new WebRTCPlayer({ 
-    video: video, 
-    type: "whep",
-    statsTypeFilter: "^candidate-*|^inbound-rtp"     
-  });
-  await player.load(new URL(channelUrl));
-  player.unmute();
+const video = document.querySelector('video');
+const player = new WebRTCPlayer({
+  video: video,
+  type: 'whep',
+  statsTypeFilter: '^candidate-*|^inbound-rtp'
+});
+await player.load(new URL(channelUrl));
+player.unmute();
 
-  player.on("no-media", () => {
-    console.log("media timeout occured");
-  });
-  player.on("media-recovered", () => {
-    console.log("media recovered");
-  });
+player.on('no-media', () => {
+  console.log('media timeout occured');
+});
+player.on('media-recovered', () => {
+  console.log('media recovered');
+});
 
-  // Subscribe for RTC stats: `stats:${RTCStatsType}`
-  player.on("stats:inbound-rtp", (report) => {
-    if (report.kind === "video") {
-      console.log(report);
-    }
-  });
-
+// Subscribe for RTC stats: `stats:${RTCStatsType}`
+player.on('stats:inbound-rtp', (report) => {
+  if (report.kind === 'video') {
+    console.log(report);
+  }
+});
 ```
 
 ## Options
@@ -71,7 +71,7 @@ ICE_SERVERS=turn:<USERNAME>:<SECRET>@turn.eyevinn.technology:3478 npm run dev
 
 ## Adapters
 
-As SDP exchange is WebRTC media server specific this player includes adapters for various types of WebRTC media servers. 
+As SDP exchange is WebRTC media server specific this player includes adapters for various types of WebRTC media servers.
 
 ### `se.eyevinn.whpp`
 
@@ -127,15 +127,14 @@ class CustomAdapter implements Adapter {
 Then provide a factory function that will create a new instance of your adapter.
 
 ```javascript
-const video = document.querySelector("video");
+const video = document.querySelector('video');
 const player = new WebRTCPlayer({
-  video: video, 
-  type: "custom", 
+  video: video,
+  type: 'custom',
   adapterFactory: (peer: RTCPeerConnection, channelUrl: URL) => {
     return new CustomAdapter(peer, channelUrl);
   }
 });
-
 ```
 
 ## Contribution

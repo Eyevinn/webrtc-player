@@ -4,9 +4,9 @@ export interface AdapterConnectOptions {
   timeout: number;
 }
 
-export interface Adapter{
-    enableDebug();
-    getPeer() : RTCPeerConnection;
-    resetPeer(newPeer: RTCPeerConnection);
-    connect(opts?: AdapterConnectOptions);
+export interface Adapter {
+  enableDebug();
+  getPeer(): RTCPeerConnection;
+  resetPeer(newPeer: RTCPeerConnection);
+  connect(opts?: AdapterConnectOptions);
 }
