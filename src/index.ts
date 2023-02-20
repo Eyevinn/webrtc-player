@@ -1,14 +1,17 @@
-import { Adapter } from "./adapters/Adapter";
-import { AdapterFactory, AdapterFactoryFunction } from "./adapters/AdapterFactory";
-import { EventEmitter } from "events";
-import { CSAIManager } from "@eyevinn/csai-manager";
+import { Adapter } from './adapters/Adapter';
+import {
+  AdapterFactory,
+  AdapterFactoryFunction
+} from './adapters/AdapterFactory';
+import { EventEmitter } from 'events';
+import { CSAIManager } from '@eyevinn/csai-manager';
 
-export { ListAvailableAdapters } from "./adapters/AdapterFactory";
+export { ListAvailableAdapters } from './adapters/AdapterFactory';
 
 enum Message {
-  NO_MEDIA = "no-media",
-  MEDIA_RECOVERED = "media-recovered",
-  PEER_CONNECTION_FAILED = "peer-connection-failed"
+  NO_MEDIA = 'no-media',
+  MEDIA_RECOVERED = 'media-recovered',
+  PEER_CONNECTION_FAILED = 'peer-connection-failed'
 }
 
 interface WebRTCPlayerOptions {
@@ -50,9 +53,10 @@ export class WebRTCPlayer extends EventEmitter {
     this.adapterType = opts.type;
     this.adapterFactory = opts.adapterFactory;
     this.statsTypeFilter = opts.statsTypeFilter;
-    this.mediaTimeoutThreshold = opts.timeoutThreshold ?? this.mediaTimeoutThreshold;
+    this.mediaTimeoutThreshold =
+      opts.timeoutThreshold ?? this.mediaTimeoutThreshold;
 
-    this.iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
+    this.iceServers = [{ urls: 'stun:stun.l.google.com:19302' }];
     if (opts.iceServers) {
       this.iceServers = opts.iceServers;
     }
@@ -62,10 +66,10 @@ export class WebRTCPlayer extends EventEmitter {
         contentVideoElement: this.videoElement,
         vmapUrl: opts.vmapUrl,
         isLive: true,
-        autoplay: true,
+        autoplay: true
       });
-      this.videoElement.addEventListener("ended", () => {
-        if(this.csaiManager){
+      this.videoElement.addEventListener('ended', () => {
+        if (this.csaiManager) {
           this.csaiManager.destroy();
         }
       });
@@ -79,16 +83,15 @@ export class WebRTCPlayer extends EventEmitter {
 
   private log(...args: any[]) {
     if (this.debug) {
-      console.log("WebRTC-player", ...args);
+      console.log('WebRTC-player', ...args);
     }
   }
 
   private error(...args: any[]) {
-    console.error("WebRTC-player", ...args);
+    console.error('WebRTC-player', ...args);
   }
 
   private async onConnectionStateChange() {
-
     if (this.peer.connectionState === 'failed') {
       this.emit(Message.PEER_CONNECTION_FAILED);
       this.peer && this.peer.close();
@@ -98,12 +101,13 @@ export class WebRTCPlayer extends EventEmitter {
         return;
       }
 
-      this.log(`Connection failed, recreating peer connection, attempts left ${this.reconnectAttemptsLeft}`);
+      this.log(
+        `Connection failed, recreating peer connection, attempts left ${this.reconnectAttemptsLeft}`
+      );
       await this.connect();
       this.reconnectAttemptsLeft--;
-
     } else if (this.peer.connectionState === 'connected') {
-      this.log("Connected");
+      this.log('Connected');
       this.reconnectAttemptsLeft = RECONNECT_ATTEMPTS;
     }
   }
@@ -111,7 +115,7 @@ export class WebRTCPlayer extends EventEmitter {
   private onErrorHandler(error: string) {
     this.log(`onError=${error}`);
     switch (error) {
-      case "reconnectneeded":
+      case 'reconnectneeded':
         this.peer && this.peer.close();
         this.videoElement.srcObject = null;
         this.setupPeer();
@@ -121,8 +125,7 @@ export class WebRTCPlayer extends EventEmitter {
     }
   }
 
-  private async onConnectionStats() { 
-    
+  private async onConnectionStats() {
     if (this.peer && this.statsTypeFilter) {
       let bytesReceivedBlock: number = 0;
       let stats = await this.peer.getStats(null);
@@ -134,7 +137,7 @@ export class WebRTCPlayer extends EventEmitter {
 
         //inbound-rtp attribute bytesReceived from stats report will contain the total number of bytes received for this SSRC.
         //In this case there are several SSRCs. They are all added together in each onConnectionStats iteration and compared to their value during the previous iteration.
-        if (report.type.match('inbound-rtp') ) { 
+        if (report.type.match('inbound-rtp')) {
           bytesReceivedBlock += report.bytesReceived;
         }
       });
@@ -142,16 +145,18 @@ export class WebRTCPlayer extends EventEmitter {
       if (bytesReceivedBlock <= this.bytesReceived) {
         this.timeoutThresholdCounter += this.msStatsInterval;
 
-        if (this.mediaTimeoutOccured === false && this.timeoutThresholdCounter >= this.mediaTimeoutThreshold) {
+        if (
+          this.mediaTimeoutOccured === false &&
+          this.timeoutThresholdCounter >= this.mediaTimeoutThreshold
+        ) {
           this.emit(Message.NO_MEDIA);
           this.mediaTimeoutOccured = true;
         }
-      }
-      else {
+      } else {
         this.bytesReceived = bytesReceivedBlock;
         this.timeoutThresholdCounter = 0;
 
-        if(this.mediaTimeoutOccured == true){
+        if (this.mediaTimeoutOccured == true) {
           this.emit(Message.MEDIA_RECOVERED);
           this.mediaTimeoutOccured = false;
         }
@@ -171,7 +176,13 @@ export class WebRTCPlayer extends EventEmitter {
         continue;
       }
 
-      console.log('Set video element remote stream to ' + stream.id, ' audio ' + stream.getAudioTracks().length + ' video ' + stream.getVideoTracks().length);
+      console.log(
+        'Set video element remote stream to ' + stream.id,
+        ' audio ' +
+          stream.getAudioTracks().length +
+          ' video ' +
+          stream.getVideoTracks().length
+      );
       this.videoElement.srcObject = stream;
     }
   }
@@ -179,22 +190,32 @@ export class WebRTCPlayer extends EventEmitter {
   private async connect() {
     this.setupPeer();
 
-    if (this.adapterType !== "custom") {
-      this.adapter = AdapterFactory(this.adapterType,
-        this.peer, this.channelUrl, this.onErrorHandler.bind(this));
+    if (this.adapterType !== 'custom') {
+      this.adapter = AdapterFactory(
+        this.adapterType,
+        this.peer,
+        this.channelUrl,
+        this.onErrorHandler.bind(this)
+      );
     } else if (this.adapterFactory) {
-      this.adapter = this.adapterFactory(this.peer, this.channelUrl,
-        this.onErrorHandler.bind(this));
+      this.adapter = this.adapterFactory(
+        this.peer,
+        this.channelUrl,
+        this.onErrorHandler.bind(this)
+      );
     }
     if (!this.adapter) {
-      throw new Error(`Failed to create adapter (${this.adapterType})`)
+      throw new Error(`Failed to create adapter (${this.adapterType})`);
     }
 
     if (this.debug) {
       this.adapter.enableDebug();
     }
 
-    this.statsInterval = setInterval(this.onConnectionStats.bind(this), this.msStatsInterval);
+    this.statsInterval = setInterval(
+      this.onConnectionStats.bind(this),
+      this.msStatsInterval
+    );
     await this.adapter.connect();
   }
 
@@ -208,7 +229,7 @@ export class WebRTCPlayer extends EventEmitter {
 
   stop() {
     clearInterval(this.statsInterval);
-    this.peer.close(); 
+    this.peer.close();
     this.videoElement.srcObject = null;
     this.videoElement.load();
   }
