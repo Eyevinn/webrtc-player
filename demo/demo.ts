@@ -44,7 +44,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     document.querySelector<HTMLInputElement>('#prerollUrl');
 
   const searchParams = new URL(window.location.href).searchParams;
-  const type = searchParams.get('type') || 'se.eyevinn.whpp';
+  const type = searchParams.get('type') || 'whep';
 
   if (type === 'se.eyevinn.whpp' || type === 'se.eyevinn.webrtc') {
     const channels = await getChannels(BROADCASTER_URL);
