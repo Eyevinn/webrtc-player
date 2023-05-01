@@ -16,6 +16,7 @@ export class WHEPAdapter implements Adapter {
   private iceGatheringTimeout: any;
   private resource: string;
   private onErrorHandler: (error: string) => void;
+  private audio: boolean;
 
   constructor(
     peer: RTCPeerConnection,
@@ -26,6 +27,7 @@ export class WHEPAdapter implements Adapter {
     this.whepType = WHEPType.Client;
 
     this.onErrorHandler = onError;
+    this.audio = true;
     this.resetPeer(peer);
   }
 
@@ -53,7 +55,8 @@ export class WHEPAdapter implements Adapter {
 
     if (this.whepType === WHEPType.Client) {
       this.localPeer.addTransceiver('video', { direction: 'recvonly' });
-      this.localPeer.addTransceiver('audio', { direction: 'recvonly' });
+      if (this.audio)
+        this.localPeer.addTransceiver('audio', { direction: 'recvonly' });
       const offer = await this.localPeer.createOffer();
       await this.localPeer.setLocalDescription(offer);
       this.waitingForCandidates = true;
@@ -180,6 +183,10 @@ export class WHEPAdapter implements Adapter {
       } else if (response.status === 400) {
         this.log(`server does not support client-offer, need to reconnect`);
         this.whepType = WHEPType.Server;
+        this.onErrorHandler('reconnectneeded');
+      } else if (response.status === 406 && this.audio) {
+        this.log(`maybe server does not support audio. Let's retry without audio`);
+        this.audio = false;
         this.onErrorHandler('reconnectneeded');
       } else {
         this.error(`sendAnswer response: ${response.status}`);
