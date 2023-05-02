@@ -1,6 +1,6 @@
 {
-  "name": "@eyevinn/webrtc-player",
-  "version": "0.10.0",
+  "name": "@get-wrecked/webrtc-player",
+  "version": "0.10.1",
   "description": "Media Server independent WebRTC player",
   "homepage": "https://webcast.eyevinn.technology",
   "bugs": "https://github.com/Eyevinn/webrtc-player/issues",
@@ -35,7 +35,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Eyevinn/webrtc-player.git"
+    "url": "https://github.com/get-wrecked/webrtc-player.git"
   },
   "devDependencies": {
     "@parcel/packager-ts": "2.4.1",
