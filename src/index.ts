@@ -26,6 +26,13 @@ interface WebRTCPlayerOptions {
   timeoutThreshold?: number;
 }
 
+interface VideoEventData {
+  type: string;
+  currentTime: number;
+  duration: number;
+  paused: boolean;
+}
+
 const RECONNECT_ATTEMPTS = 2;
 
 export class WebRTCPlayer extends EventEmitter {
@@ -68,11 +75,43 @@ export class WebRTCPlayer extends EventEmitter {
         isLive: true,
         autoplay: true
       });
+
       this.videoElement.addEventListener('ended', () => {
         if (this.csaiManager) {
           this.csaiManager.destroy();
         }
       });
+
+      // Initialize video event listeners
+      document.addEventListener('DOMContentLoaded', () => {
+        const {addEventListener} = document.querySelector('video');
+
+        const events = [
+          'play',
+          'pause',
+          'seeking',
+          'seeked',
+          'timeupdate',
+          'ended',
+          'volumechange',
+          'enterpictureinpicture',
+          'leavepictureinpicture',
+          'loadedmetadata'
+        ];
+
+        events.forEach((event) => {
+          addEventListener(event, this.handleVideoEvent);
+        });
+      });
+
+    // Function to receive events from the WebView
+      (window as any).receiveMessageFromWebView = function(eventData: VideoEventData): void {
+        this.executeVideoEvent(eventData);
+      };
+
+    // Create the webviewMessageChannel MessageChannel object
+      const webviewMessageChannel = new MessageChannel();
+      (window as any).webkit.messageHandlers.webviewMessageChannel = webviewMessageChannel.port1;
     }
   }
 
@@ -163,6 +202,39 @@ export class WebRTCPlayer extends EventEmitter {
       }
     }
   }
+
+
+  // Function to handle video events and pass them to the iOS/Android listener
+  public handleVideoEvent(event: Event & { target: HTMLVideoElement }): void {
+    const videoData: VideoEventData = {
+      type: event.type,
+      currentTime: event.target.currentTime,
+      duration: event.target.duration,
+      paused: event.target.paused
+    };
+    (window as any).webkit.messageHandlers.webviewMessageChannel.postMessage(videoData);
+  }
+
+  // Function to execute video events received from WebView
+  public executeVideoEvent(eventData: VideoEventData): void {
+    const video = document.querySelector('video');
+    if (!video) return;
+
+    switch (eventData.type) {
+      case 'play':
+        video.play();
+        break;
+      case 'pause':
+        video.pause();
+        break;
+      case 'seek':
+        video.currentTime = eventData.currentTime;
+        break;
+      default:
+        console.error(`Unsupported event type: ${eventData.type}`);
+    }
+  }
+
 
   private setupPeer() {
     this.peer = new RTCPeerConnection({ iceServers: this.iceServers });
