@@ -57,6 +57,7 @@ export class WebRTCPlayer extends EventEmitter {
   private mediaTimeoutThreshold: number = 30000;
   private timeoutThresholdCounter: number = 0;
   private bytesReceived: number = 0;
+  private stream: MediaStream;
 
   constructor(opts: WebRTCPlayerOptions) {
     super();
@@ -116,6 +117,7 @@ export class WebRTCPlayer extends EventEmitter {
     if ((window as any).webkit && (window as any).webkit.messageHandlers) {
       (window as any).webkit.messageHandlers.webviewMessageChannel = webviewMessageChannel.port1;
     }
+    this.stream = new MediaStream();
   }
 
   async load(channelUrl: URL) {
@@ -198,6 +200,7 @@ export class WebRTCPlayer extends EventEmitter {
       this.reconnectAttemptsLeft--;
     } else if (this.peer.connectionState === 'connected') {
       this.log('Connected');
+      this.videoElement.srcObject = this.stream;
       this.reconnectAttemptsLeft = RECONNECT_ATTEMPTS;
     }
   }
@@ -263,19 +266,31 @@ export class WebRTCPlayer extends EventEmitter {
   }
 
   private onTrack(event: RTCTrackEvent) {
-    for (let stream of event.streams) {
-      if (stream.id === 'feedbackvideomslabel' || this.videoElement.srcObject) {
-        continue;
-      }
-
-      console.log(
-        'Set video element remote stream to ' + stream.id,
-        ' audio ' +
-          stream.getAudioTracks().length +
-          ' video ' +
-          stream.getVideoTracks().length
-      );
-      this.videoElement.srcObject = stream;
+    const track = event.track;
+    const currentTracks = this.stream.getTracks();
+    const streamAlreadyHasVideoTrack = currentTracks.some(
+      (track) => track.kind === 'video'
+    );
+    const streamAlreadyHasAudioTrack = currentTracks.some(
+      (track) => track.kind === 'audio'
+    );
+    switch (track.kind) {
+      case 'video':
+        if (streamAlreadyHasVideoTrack) {
+          break;
+        }
+        console.log('Added a video track');
+        this.stream.addTrack(track);
+        break;
+      case 'audio':
+        if (streamAlreadyHasAudioTrack) {
+          break;
+        }
+        console.log('Added a audio track');
+        this.stream.addTrack(track);
+        break;
+      default:
+        console.log('got unknown track ' + track);
     }
   }
 
