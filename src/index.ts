@@ -125,6 +125,9 @@ export class WebRTCPlayer extends EventEmitter {
         case 'enterpictureinpicture':
           video.requestPictureInPicture();
           break;
+        case 'leavepictureinpicture':
+          document.exitPictureInPicture();
+          break;
         case 'pause':
           video.pause();
           break;
