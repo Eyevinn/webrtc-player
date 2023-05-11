@@ -33,6 +33,10 @@ interface VideoEventData {
   paused: boolean;
 }
 
+interface MediaStreamEvent extends Event {
+  target: HTMLVideoElement;
+}
+
 const RECONNECT_ATTEMPTS = 2;
 
 export class WebRTCPlayer extends EventEmitter {
@@ -84,7 +88,6 @@ export class WebRTCPlayer extends EventEmitter {
 
       // Initialize video event listeners
       document.addEventListener('DOMContentLoaded', () => {
-        const {addEventListener} = document.querySelector('video');
 
         const events = [
           'play',
@@ -100,7 +103,7 @@ export class WebRTCPlayer extends EventEmitter {
         ];
 
         events.forEach((event) => {
-          addEventListener(event, this.handleVideoEvent);
+          this.videoElement.addEventListener(event, this.handleVideoEvent as EventListener);
         });
       });
 
@@ -205,7 +208,7 @@ export class WebRTCPlayer extends EventEmitter {
 
 
   // Function to handle video events and pass them to the iOS/Android listener
-  public handleVideoEvent(event: Event & { target: HTMLVideoElement }): void {
+  private handleVideoEvent(event: MediaStreamEvent): void {
     const videoData: VideoEventData = {
       type: event.type,
       currentTime: event.target.currentTime,
@@ -216,7 +219,7 @@ export class WebRTCPlayer extends EventEmitter {
   }
 
   // Function to execute video events received from WebView
-  public executeVideoEvent(eventData: VideoEventData): void {
+  private executeVideoEvent(eventData: VideoEventData): void {
     const video = document.querySelector('video');
     if (!video) return;
 
