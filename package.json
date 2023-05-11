@@ -1,6 +1,6 @@
 {
   "name": "@get-wrecked/webrtc-player",
-  "version": "0.10.6",
+  "version": "0.10.7",
   "description": "Media Server independent WebRTC player",
   "homepage": "https://webcast.eyevinn.technology",
   "bugs": "https://github.com/Eyevinn/webrtc-player/issues",
