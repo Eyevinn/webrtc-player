@@ -85,35 +85,35 @@ export class WebRTCPlayer extends EventEmitter {
           this.csaiManager.destroy();
         }
       });
+    }
 
-      // Initialize video event listeners
-      document.addEventListener('DOMContentLoaded', () => {
+      const events = [
+        'play',
+        'pause',
+        'seeking',
+        'seeked',
+        'timeupdate',
+        'ended',
+        'volumechange',
+        'enterpictureinpicture',
+        'leavepictureinpicture',
+        'loadedmetadata'
+      ];
 
-        const events = [
-          'play',
-          'pause',
-          'seeking',
-          'seeked',
-          'timeupdate',
-          'ended',
-          'volumechange',
-          'enterpictureinpicture',
-          'leavepictureinpicture',
-          'loadedmetadata'
-        ];
-
-        events.forEach((event) => {
-          this.videoElement.addEventListener(event, this.handleVideoEvent as EventListener);
-        });
+      events.forEach((event) => {
+        console.log("added listener : " + event);
+        this.videoElement.addEventListener(event, this.handleVideoEvent as EventListener);
       });
 
+
     // Function to receive events from the WebView
-      (window as any).receiveMessageFromWebView = function(eventData: VideoEventData): void {
-        this.executeVideoEvent(eventData);
-      };
+    (window as any).receiveMessageFromWebView = function (eventData: VideoEventData): void {
+      this.executeVideoEvent(eventData);
+    };
 
     // Create the webviewMessageChannel MessageChannel object
-      const webviewMessageChannel = new MessageChannel();
+    const webviewMessageChannel = new MessageChannel();
+    if ((window as any).webkit && (window as any).webkit.messageHandlers) {
       (window as any).webkit.messageHandlers.webviewMessageChannel = webviewMessageChannel.port1;
     }
   }
@@ -128,6 +128,54 @@ export class WebRTCPlayer extends EventEmitter {
       console.log('WebRTC-player', ...args);
     }
   }
+
+
+  // Function to handle video events and pass them to the iOS/Android listener
+  private handleVideoEvent(event: MediaStreamEvent): void {
+    const videoData: VideoEventData = {
+      type: event.type,
+      currentTime: event.target.currentTime,
+      duration: event.target.duration,
+      paused: event.target.paused
+    };
+    // Check if iOS WebView environment
+    if ((window as any).webkit && (window as any).webkit.messageHandlers) {
+      (window as any).webkit.messageHandlers.webviewMessageChannel.postMessage(videoData);
+    } else {
+      // For Android WebView environment
+      (window as any).postMessage(videoData, '*');
+    }
+  }
+
+  // Function to execute video events received from WebView
+  private executeVideoEvent(eventData: VideoEventData): void {
+    const video = document.querySelector('video');
+    if (!video) return;
+
+    switch (eventData.type) {
+      case 'play':
+        video.play();
+        break;
+      case 'mute':
+        video.volume = 0;
+        break;
+      case 'unmute':
+        video.volume = 1;
+        break;
+      case 'enterpictureinpicture':
+        video.requestPictureInPicture();
+        break;
+      case 'pause':
+        video.pause();
+        break;
+      case 'seek':
+        video.currentTime = eventData.currentTime;
+        break;
+      default:
+        console.error(`Unsupported event type: ${eventData.type}`);
+    }
+  }
+
 
   private error(...args: any[]) {
     console.error('WebRTC-player', ...args);
@@ -206,37 +254,6 @@ export class WebRTCPlayer extends EventEmitter {
     }
   }
 
-
-  // Function to handle video events and pass them to the iOS/Android listener
-  private handleVideoEvent(event: MediaStreamEvent): void {
-    const videoData: VideoEventData = {
-      type: event.type,
-      currentTime: event.target.currentTime,
-      duration: event.target.duration,
-      paused: event.target.paused
-    };
-    (window as any).webkit.messageHandlers.webviewMessageChannel.postMessage(videoData);
-  }
-
-  // Function to execute video events received from WebView
-  private executeVideoEvent(eventData: VideoEventData): void {
-    const video = document.querySelector('video');
-    if (!video) return;
-
-    switch (eventData.type) {
-      case 'play':
-        video.play();
-        break;
-      case 'pause':
-        video.pause();
-        break;
-      case 'seek':
-        video.currentTime = eventData.currentTime;
-        break;
-      default:
-        console.error(`Unsupported event type: ${eventData.type}`);
-    }
-  }
 
 
   private setupPeer() {
