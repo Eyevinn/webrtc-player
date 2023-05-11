@@ -181,8 +181,9 @@ export class WHEPAdapter implements Adapter {
           sdp: answer
         });
       } else if (response.status === 400) {
-        this.log(`server does not support client-offer, need to reconnect`);
-        this.whepType = WHEPType.Server;
+        this.log(`Maybe there is startup delay, Let's reconnect`);
+        // Let's sleep for sometime, so that we don't flood the server with WHEP requests.
+        await new Promise(r => setTimeout(r, 500));
         this.onErrorHandler('reconnectneeded');
       } else if (response.status === 406 && this.audio) {
         this.log(`maybe server does not support audio. Let's retry without audio`);
