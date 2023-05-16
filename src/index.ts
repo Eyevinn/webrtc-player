@@ -175,7 +175,7 @@ export class WebRTCPlayer extends EventEmitter {
       //window.postMessage(videoData, '*');
       try {
         // @ts-ignore
-        Android.postMessage(videoData, '*');
+        Android.postMessage(JSON.stringify(videoData), '*');
       } catch(err) {
         // no need to report errors as this is a common occurance since it's an injected variable by the Android webview.
       }
