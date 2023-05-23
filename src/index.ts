@@ -102,7 +102,6 @@ export class WebRTCPlayer extends EventEmitter {
       ];
 
       events.forEach((event) => {
-        console.log("added listener : " + event);
         this.videoElement.addEventListener(event, this.handleVideoEvent as EventListener);
       });
 
