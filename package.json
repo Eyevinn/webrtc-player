@@ -9,12 +9,18 @@
   "types": "dist/types.d.ts",
   "targets": {
     "main": {
-      "distDir": "./dist"
+      "distDir": "./dist",
+      "engines": {
+        "browsers": "> 0.5%, last 2 versions, not dead"
+      }
     },
     "demo": {
       "source": "demo/index.html",
       "distDir": "./dist-demo",
-      "isLibrary": false
+      "isLibrary": false,
+      "engines": {
+        "browsers": "> 0.5%, last 2 versions, not dead"
+      }
     }
   },
   "scripts": {
@@ -23,6 +29,9 @@
     "build:demo": "parcel build --target demo",
     "postversion": "git push && git push --tags",
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "engines": {
+    "node": ">=18.15.0"
   },
   "author": "Eyevinn Technology AB <work@eyevinn.se>",
   "contributors": [
@@ -38,11 +47,11 @@
     "url": "https://github.com/get-wrecked/webrtc-player.git"
   },
   "devDependencies": {
-    "@parcel/packager-ts": "2.4.1",
-    "@parcel/transformer-typescript-types": "2.4.1",
+    "@parcel/packager-ts": "^2.8.3",
+    "@parcel/transformer-typescript-types": "^2.8.3",
     "@types/events": "^3.0.0",
     "@types/node": "^17.0.33",
-    "parcel": "2.4.1",
+    "parcel": "^2.8.3",
     "prettier": "2.8.4",
     "typescript": "^4.6.3"
   },
