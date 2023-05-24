@@ -24,6 +24,9 @@
     "postversion": "git push && git push --tags",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "engines": {
+    "node": ">=18.15.0"
+  },
   "author": "Eyevinn Technology AB <work@eyevinn.se>",
   "contributors": [
     "Jonas Birmé <jonas.birme@eyevinn.se> (Eyevinn Technology AB)"
