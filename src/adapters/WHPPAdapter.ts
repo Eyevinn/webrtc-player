@@ -2,10 +2,10 @@ import { Adapter, AdapterConnectOptions } from './Adapter';
 import { WHPPClient } from '@eyevinn/whpp-client';
 
 export class WHPPAdapter implements Adapter {
-  private client: WHPPClient;
-  private localPeer: RTCPeerConnection;
+  private client: WHPPClient | undefined = undefined;
+  private localPeer: RTCPeerConnection | undefined = undefined;
   private channelUrl: URL;
-  private debug: boolean;
+  private debug: boolean = false;
 
   constructor(
     peer: RTCPeerConnection,
@@ -24,15 +24,17 @@ export class WHPPAdapter implements Adapter {
     this.localPeer = newPeer;
   }
 
-  getPeer(): RTCPeerConnection {
+  getPeer(): RTCPeerConnection | undefined {
     return this.localPeer;
   }
 
   async connect(opts?: AdapterConnectOptions) {
-    this.client = new WHPPClient(this.localPeer, this.channelUrl, {
-      debug: this.debug
-    });
-    await this.client.connect();
+    if (this.localPeer) {
+      this.client = new WHPPClient(this.localPeer, this.channelUrl, {
+        debug: this.debug
+      });
+      await this.client.connect();
+    }
   }
 
   private log(...args: any[]) {

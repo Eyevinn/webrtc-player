@@ -8,13 +8,13 @@ export enum WHEPType {
 }
 
 export class WHEPAdapter implements Adapter {
-  private localPeer: RTCPeerConnection;
+  private localPeer: RTCPeerConnection | undefined;
   private channelUrl: URL;
-  private debug: boolean;
+  private debug: boolean = false;
   private whepType: WHEPType;
-  private waitingForCandidates: boolean;
+  private waitingForCandidates: boolean = false;
   private iceGatheringTimeout: any;
-  private resource: string;
+  private resource: string | null = null;
   private onErrorHandler: (error: string) => void;
   private audio: boolean;
 
@@ -42,7 +42,7 @@ export class WHEPAdapter implements Adapter {
     this.localPeer.onicecandidate = this.onIceCandidate.bind(this);
   }
 
-  getPeer(): RTCPeerConnection {
+  getPeer(): RTCPeerConnection | undefined {
     return this.localPeer;
   }
 
@@ -53,7 +53,7 @@ export class WHEPAdapter implements Adapter {
   private async initSdpExchange() {
     clearTimeout(this.iceGatheringTimeout);
 
-    if (this.whepType === WHEPType.Client) {
+    if (this.localPeer && this.whepType === WHEPType.Client) {
       this.localPeer.addTransceiver('video', { direction: 'recvonly' });
       if (this.audio)
         this.localPeer.addTransceiver('audio', { direction: 'recvonly' });
@@ -65,18 +65,20 @@ export class WHEPAdapter implements Adapter {
         DEFAULT_CONNECT_TIMEOUT
       );
     } else {
-      const offer = await this.requestOffer();
-      await this.localPeer.setRemoteDescription({
-        type: 'offer',
-        sdp: offer
-      });
-      const answer = await this.localPeer.createAnswer();
-      await this.localPeer.setLocalDescription(answer);
-      this.waitingForCandidates = true;
-      this.iceGatheringTimeout = setTimeout(
-        this.onIceGatheringTimeout.bind(this),
-        DEFAULT_CONNECT_TIMEOUT
-      );
+      if (this.localPeer) {
+        const offer = await this.requestOffer();
+        await this.localPeer.setRemoteDescription({
+          type: 'offer',
+          sdp: offer
+        });
+        const answer = await this.localPeer.createAnswer();
+        await this.localPeer.setLocalDescription(answer);
+        this.waitingForCandidates = true;
+        this.iceGatheringTimeout = setTimeout(
+          this.onIceGatheringTimeout.bind(this),
+          DEFAULT_CONNECT_TIMEOUT
+        );
+      }
     }
   }
 
@@ -94,15 +96,17 @@ export class WHEPAdapter implements Adapter {
   }
 
   private onIceGatheringStateChange(event: Event) {
-    this.log('IceGatheringState', this.localPeer.iceGatheringState);
-    if (
-      this.localPeer.iceGatheringState !== 'complete' ||
-      !this.waitingForCandidates
-    ) {
-      return;
-    }
+    if (this.localPeer) {
+      this.log('IceGatheringState', this.localPeer.iceGatheringState);
+      if (
+        this.localPeer.iceGatheringState !== 'complete' ||
+        !this.waitingForCandidates
+      ) {
+        return;
+      }
 
-    this.onDoneWaitingForCandidates();
+      this.onDoneWaitingForCandidates();
+    }
   }
 
   private onIceGatheringTimeout() {
@@ -145,25 +149,37 @@ export class WHEPAdapter implements Adapter {
   }
 
   private async sendAnswer() {
-    if (this.whepType === WHEPType.Server) {
+    if (!this.localPeer) {
+      this.log('Local RTC peer not initialized');
+      return;
+    }
+
+    if (this.whepType === WHEPType.Server && this.resource) {
       const answer = this.localPeer.localDescription;
-      const response = await fetch(this.resource, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/sdp'
-        },
-        body: answer.sdp
-      });
-      if (!response.ok) {
-        this.error(`sendAnswer response: ${response.status}`);
+      if (answer) {
+        const response = await fetch(this.resource, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/sdp'
+          },
+          body: answer.sdp
+        });
+        if (!response.ok) {
+          this.error(`sendAnswer response: ${response.status}`);
+        }
       }
     }
   }
 
   private async sendOffer() {
+    if (!this.localPeer) {
+      this.log('Local RTC peer not initialized');
+      return;
+    }
+
     const offer = this.localPeer.localDescription;
 
-    if (this.whepType === WHEPType.Client) {
+    if (this.whepType === WHEPType.Client && offer) {
       const response = await fetch(this.channelUrl.href, {
         method: 'POST',
         headers: {

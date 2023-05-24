@@ -11,6 +11,10 @@ export interface AdapterFactoryFunction {
   ): Adapter;
 }
 
+interface AdapterMap {
+  [type: string]: AdapterFactoryFunction;
+}
+
 const WHPPAdapterFactory: AdapterFactoryFunction = (
   peer,
   channelUrl,
@@ -35,7 +39,7 @@ const WHEPAdapterFactory: AdapterFactoryFunction = (
   return new WHEPAdapter(peer, channelUrl, onError);
 };
 
-const adapters = {
+const adapters: AdapterMap = {
   'se.eyevinn.whpp': WHPPAdapterFactory,
   'se.eyevinn.webrtc': EyevinnAdapterFactory,
   whep: WHEPAdapterFactory
