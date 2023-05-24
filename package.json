@@ -9,12 +9,18 @@
   "types": "dist/types.d.ts",
   "targets": {
     "main": {
-      "distDir": "./dist"
+      "distDir": "./dist",
+      "engines": {
+        "browsers": "> 0.5%, last 2 versions, not dead"
+      }
     },
     "demo": {
       "source": "demo/index.html",
       "distDir": "./dist-demo",
-      "isLibrary": false
+      "isLibrary": false,
+      "engines": {
+        "browsers": "> 0.5%, last 2 versions, not dead"
+      }
     }
   },
   "scripts": {

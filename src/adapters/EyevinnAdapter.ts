@@ -3,7 +3,7 @@ import { Adapter, AdapterConnectOptions } from './Adapter';
 const DEFAULT_CONNECT_TIMEOUT = 2000;
 
 export class EyevinnAdapter implements Adapter {
-  private localPeer: RTCPeerConnection;
+  private localPeer: RTCPeerConnection | undefined;
   private channelUrl: URL;
   private debug: boolean;
   private iceGatheringTimeout: any;
@@ -34,11 +34,16 @@ export class EyevinnAdapter implements Adapter {
     this.localPeer.onicecandidate = this.onIceCandidate.bind(this);
   }
 
-  getPeer(): RTCPeerConnection {
+  getPeer(): RTCPeerConnection | undefined {
     return this.localPeer;
   }
 
   async connect(opts?: AdapterConnectOptions) {
+    if (!this.localPeer) {
+      this.log('Local RTC peer not initialized');
+      return;
+    }
+
     this.localPeer.addTransceiver('video', { direction: 'recvonly' });
     this.localPeer.addTransceiver('audio', { direction: 'recvonly' });
 
@@ -66,6 +71,11 @@ export class EyevinnAdapter implements Adapter {
   }
 
   private onIceGatheringStateChange(event: Event) {
+    if (!this.localPeer) {
+      this.log('Local RTC peer not initialized');
+      return;
+    }
+
     this.log('IceGatheringState', this.localPeer.iceGatheringState);
 
     if (
@@ -78,7 +88,12 @@ export class EyevinnAdapter implements Adapter {
     this.onDoneWaitingForCandidates();
   }
 
-  private onIceConnectionStateChange(e) {
+  private onIceConnectionStateChange() {
+    if (!this.localPeer) {
+      this.log('Local RTC peer not initialized');
+      return;
+    }
+
     this.log('IceConnectionState', this.localPeer.iceConnectionState);
 
     if (this.localPeer.iceConnectionState === 'failed') {
@@ -99,7 +114,7 @@ export class EyevinnAdapter implements Adapter {
     this.log('IceCandidate', candidate.candidate);
   }
 
-  private onIceCandidateError(e) {
+  private onIceCandidateError(e: Event) {
     this.log('IceCandidateError', e);
   }
 
@@ -114,6 +129,11 @@ export class EyevinnAdapter implements Adapter {
   }
 
   private async onDoneWaitingForCandidates() {
+    if (!this.localPeer) {
+      this.log('Local RTC peer not initialized');
+      return;
+    }
+
     this.waitingForCandidates = false;
     clearTimeout(this.iceGatheringTimeout);
 
@@ -122,7 +142,7 @@ export class EyevinnAdapter implements Adapter {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ sdp: this.localPeer.localDescription.sdp })
+      body: JSON.stringify({ sdp: this.localPeer.localDescription?.sdp })
     });
     if (response.ok) {
       const { sdp } = await response.json();
