@@ -98,7 +98,8 @@ export class WebRTCPlayer extends EventEmitter {
         'volumechange',
         'enterpictureinpicture',
         'leavepictureinpicture',
-        'loadedmetadata'
+        'loadedmetadata',
+        'fullscreenchange'
       ];
 
       events.forEach((event) => {
