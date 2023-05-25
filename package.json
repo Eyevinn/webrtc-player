@@ -1,6 +1,6 @@
 {
   "name": "@eyevinn/webrtc-player",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "Media Server independent WebRTC player",
   "homepage": "https://webcast.eyevinn.technology",
   "bugs": "https://github.com/Eyevinn/webrtc-player/issues",
