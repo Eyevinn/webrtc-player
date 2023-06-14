@@ -206,6 +206,7 @@ export class WHEPAdapter implements Adapter {
         this.onErrorHandler('reconnectneeded');
       } else {
         this.error(`sendAnswer response: ${response.status}`);
+        this.onErrorHandler('connectionfailed');
       }
     }
   }

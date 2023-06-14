@@ -11,7 +11,8 @@ export { ListAvailableAdapters } from './adapters/AdapterFactory';
 enum Message {
   NO_MEDIA = 'no-media',
   MEDIA_RECOVERED = 'media-recovered',
-  PEER_CONNECTION_FAILED = 'peer-connection-failed'
+  PEER_CONNECTION_FAILED = 'peer-connection-failed',
+  INITIAL_CONNECTION_FAILED = 'initial-connection-failed',
 }
 
 interface WebRTCPlayerOptions {
@@ -121,6 +122,11 @@ export class WebRTCPlayer extends EventEmitter {
         this.setupPeer();
         this.adapter.resetPeer(this.peer);
         this.adapter.connect();
+        break;
+      case 'connectionfailed':
+        this.peer && this.peer.close();
+        this.videoElement.srcObject = null;
+        this.emit(Message.INITIAL_CONNECTION_FAILED);
         break;
     }
   }
