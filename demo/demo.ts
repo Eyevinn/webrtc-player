@@ -23,7 +23,8 @@ async function getChannels(broadcasterUrl: string) {
 let clientTimeMsElement: HTMLSpanElement | null;
 
 function pad(v: number, n: number) {
-  for (var r = v.toString(); r.length < n; r = 0 + r);
+  let r;
+  for (r = v.toString(); r.length < n; r = 0 + r);
   return r;
 }
 
@@ -102,54 +103,53 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   const playButton = document.querySelector<HTMLButtonElement>('#play');
   playButton?.addEventListener('click', async () => {
-      const channelUrl = input.value;
-      const vmapUrlElem = document.querySelector<HTMLInputElement>('#preroll');
-      const vmapUrl = vmapUrlElem && vmapUrlElem.checked
-        ? inputPrerollUrl.value
-        : undefined;
-      if (video) {
-        player = new WebRTCPlayer({
-          video: video,
-          type: type,
-          iceServers: iceServers,
-          debug: true,
-          vmapUrl: vmapUrl,
-          statsTypeFilter: '^candidate-*|^inbound-rtp'
-        });
+    const channelUrl = input.value;
+    const vmapUrlElem = document.querySelector<HTMLInputElement>('#preroll');
+    const vmapUrl =
+      vmapUrlElem && vmapUrlElem.checked ? inputPrerollUrl.value : undefined;
+    if (video) {
+      player = new WebRTCPlayer({
+        video: video,
+        type: type,
+        iceServers: iceServers,
+        debug: true,
+        vmapUrl: vmapUrl,
+        statsTypeFilter: '^candidate-*|^inbound-rtp'
+      });
+    }
+
+    const packetsLost: PacketsLost = { video: 0, audio: 0 };
+
+    player.on('stats:candidate-pair', (report) => {
+      const currentRTTElem =
+        document.querySelector<HTMLSpanElement>('#stats-current-rtt');
+      const incomingBitrateElem = document.querySelector<HTMLSpanElement>(
+        '#stats-incoming-bitrate'
+      );
+      if (report.nominated && currentRTTElem) {
+        currentRTTElem.innerHTML = `RTT: ${
+          report.currentRoundTripTime * 1000
+        }ms`;
+        if (report.availableIncomingBitrate && incomingBitrateElem) {
+          incomingBitrateElem.innerHTML = `Bitrate: ${Math.round(
+            report.availableIncomingBitrate / 1000
+          )}kbps`;
+        }
       }
-
-      let packetsLost: PacketsLost = { video: 0, audio: 0 };
-
-      player.on('stats:candidate-pair', (report) => {
-        const currentRTTElem = document.querySelector<HTMLSpanElement>(
-          '#stats-current-rtt'
-        );
-        const incomingBitrateElem = document.querySelector<HTMLSpanElement>(
-          '#stats-incoming-bitrate'
-        );
-        if (report.nominated && currentRTTElem) {
-          currentRTTElem.innerHTML = `RTT: ${report.currentRoundTripTime * 1000}ms`;
-          if (report.availableIncomingBitrate && incomingBitrateElem) {
-            incomingBitrateElem.innerHTML = `Bitrate: ${Math.round(
-              report.availableIncomingBitrate / 1000
-            )}kbps`;
-          }
-        }
-      });
-      player.on('stats:inbound-rtp', (report) => {
-        if (report.kind === 'video' || report.kind === 'audio') {
-          const packetLossElem = document.querySelector<HTMLSpanElement>(
-            '#stats-packetloss'
-          );
-          packetsLost[report.kind] = report.packetsLost;
-          if (packetLossElem) {
-            packetLossElem.innerHTML = `Packets Lost: A=${packetsLost.audio},V=${packetsLost.video}`;
-          }
-        }
-      });
-
-      await player.load(new URL(channelUrl));
     });
+    player.on('stats:inbound-rtp', (report) => {
+      if (report.kind === 'video' || report.kind === 'audio') {
+        const packetLossElem =
+          document.querySelector<HTMLSpanElement>('#stats-packetloss');
+        packetsLost[report.kind] = report.packetsLost;
+        if (packetLossElem) {
+          packetLossElem.innerHTML = `Packets Lost: A=${packetsLost.audio},V=${packetsLost.video}`;
+        }
+      }
+    });
+
+    await player.load(new URL(channelUrl));
+  });
 
   clientTimeMsElement = document.querySelector<HTMLSpanElement>('#localTimeMs');
   window.setInterval(updateClientClock, 1);

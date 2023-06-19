@@ -12,7 +12,7 @@ enum Message {
   NO_MEDIA = 'no-media',
   MEDIA_RECOVERED = 'media-recovered',
   PEER_CONNECTION_FAILED = 'peer-connection-failed',
-  INITIAL_CONNECTION_FAILED = 'initial-connection-failed',
+  INITIAL_CONNECTION_FAILED = 'initial-connection-failed'
 }
 
 interface WebRTCPlayerOptions {
@@ -40,13 +40,13 @@ export class WebRTCPlayer extends EventEmitter {
   private reconnectAttemptsLeft: number = RECONNECT_ATTEMPTS;
   private csaiManager?: CSAIManager;
   private adapter: Adapter = <Adapter>{};
-  private statsInterval: any;
+  private statsInterval: ReturnType<typeof setInterval> | undefined;
   private statsTypeFilter: string | undefined = undefined;
-  private msStatsInterval: number = 5000;
-  private mediaTimeoutOccured: boolean = false;
-  private mediaTimeoutThreshold: number = 30000;
-  private timeoutThresholdCounter: number = 0;
-  private bytesReceived: number = 0;
+  private msStatsInterval = 5000;
+  private mediaTimeoutOccured = false;
+  private mediaTimeoutThreshold = 30000;
+  private timeoutThresholdCounter = 0;
+  private bytesReceived = 0;
 
   constructor(opts: WebRTCPlayerOptions) {
     super();
@@ -82,12 +82,14 @@ export class WebRTCPlayer extends EventEmitter {
     this.connect();
   }
 
+  // eslint-disable-next-line  @typescript-eslint/no-explicit-any
   private log(...args: any[]) {
     if (this.debug) {
       console.log('WebRTC-player', ...args);
     }
   }
 
+  // eslint-disable-next-line  @typescript-eslint/no-explicit-any
   private error(...args: any[]) {
     console.error('WebRTC-player', ...args);
   }
@@ -133,8 +135,8 @@ export class WebRTCPlayer extends EventEmitter {
 
   private async onConnectionStats() {
     if (this.peer && this.statsTypeFilter) {
-      let bytesReceivedBlock: number = 0;
-      let stats = await this.peer.getStats(null);
+      let bytesReceivedBlock = 0;
+      const stats = await this.peer.getStats(null);
 
       stats.forEach((report) => {
         if (report.type.match(this.statsTypeFilter)) {
@@ -177,7 +179,7 @@ export class WebRTCPlayer extends EventEmitter {
   }
 
   private onTrack(event: RTCTrackEvent) {
-    for (let stream of event.streams) {
+    for (const stream of event.streams) {
       if (stream.id === 'feedbackvideomslabel' || this.videoElement.srcObject) {
         continue;
       }

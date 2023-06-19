@@ -10,10 +10,10 @@ export enum WHEPType {
 export class WHEPAdapter implements Adapter {
   private localPeer: RTCPeerConnection | undefined;
   private channelUrl: URL;
-  private debug: boolean = false;
+  private debug = false;
   private whepType: WHEPType;
-  private waitingForCandidates: boolean = false;
-  private iceGatheringTimeout: any;
+  private waitingForCandidates = false;
+  private iceGatheringTimeout: ReturnType<typeof setTimeout> | undefined;
   private resource: string | null = null;
   private onErrorHandler: (error: string) => void;
   private audio: boolean;
@@ -201,7 +201,9 @@ export class WHEPAdapter implements Adapter {
         this.whepType = WHEPType.Server;
         this.onErrorHandler('reconnectneeded');
       } else if (response.status === 406 && this.audio) {
-        this.log(`maybe server does not support audio. Let's retry without audio`);
+        this.log(
+          `maybe server does not support audio. Let's retry without audio`
+        );
         this.audio = false;
         this.onErrorHandler('reconnectneeded');
       } else {

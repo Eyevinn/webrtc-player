@@ -7,7 +7,7 @@ export class EyevinnAdapter implements Adapter {
   private channelUrl: URL;
   private debug: boolean;
   private iceGatheringTimeout: any;
-  private waitingForCandidates: boolean = false;
+  private waitingForCandidates = false;
   private resourceUrl: URL | undefined = undefined;
 
   constructor(
