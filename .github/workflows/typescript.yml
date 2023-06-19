@@ -1,0 +1,17 @@
+name: Type Check
+on: [pull_request]
+
+jobs:
+  ts:
+    if: "!contains(github.event.pull_request.title, 'WIP!')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+      - name: Install Dependencies
+        run: npm ci
+      - name: Run Type Check
+        run: npm run typecheck

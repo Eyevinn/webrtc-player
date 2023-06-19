@@ -5,7 +5,7 @@ export class WHPPAdapter implements Adapter {
   private client: WHPPClient | undefined = undefined;
   private localPeer: RTCPeerConnection | undefined = undefined;
   private channelUrl: URL;
-  private debug: boolean = false;
+  private debug = false;
 
   constructor(
     peer: RTCPeerConnection,
