@@ -140,7 +140,18 @@ export class WHEPAdapter implements Adapter {
         body: ''
       });
       if (response.ok) {
-        this.resource = response.headers.get('Location');
+        if (
+          response.headers.get('Location') &&
+          response.headers.get('Location')?.match(/^\//)
+        ) {
+          const resourceUrl = new URL(
+            response.headers.get('Location')!,
+            this.channelUrl.origin
+          );
+          this.resource = resourceUrl.toString();
+        } else {
+          this.resource = response.headers.get('Location');
+        }
         this.log('WHEP Resource', this.resource);
         const offer = await response.text();
         return offer;
