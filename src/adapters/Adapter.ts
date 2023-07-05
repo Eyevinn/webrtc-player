@@ -8,5 +8,5 @@ export interface Adapter {
   enableDebug(): void;
   getPeer(): RTCPeerConnection | undefined;
   resetPeer(newPeer: RTCPeerConnection): void;
-  connect(opts?: AdapterConnectOptions): void;
+  connect(opts?: AdapterConnectOptions): Promise<void>;
 }
