@@ -137,7 +137,7 @@ export class EyevinnAdapter implements Adapter {
     this.waitingForCandidates = false;
     clearTimeout(this.iceGatheringTimeout);
 
-    const response = await fetch(this.channelUrl.href, {
+    const response = await fetch(this.channelUrl.toString(), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

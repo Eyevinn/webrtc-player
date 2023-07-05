@@ -136,8 +136,8 @@ export class WHEPAdapter implements Adapter {
 
   private async requestOffer() {
     if (this.whepType === WHEPType.Server) {
-      this.log(`Requesting offer from: ${this.channelUrl.href}`);
-      const response = await fetch(this.channelUrl.href, {
+      this.log(`Requesting offer from: ${this.channelUrl}`);
+      const response = await fetch(this.channelUrl.toString(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/sdp'
@@ -200,7 +200,8 @@ export class WHEPAdapter implements Adapter {
     const offer = this.localPeer.localDescription;
 
     if (this.whepType === WHEPType.Client && offer) {
-      const response = await fetch(this.channelUrl.href, {
+      this.log(`Sending offer to ${this.channelUrl}`);
+      const response = await fetch(this.channelUrl.toString(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/sdp'
