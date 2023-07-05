@@ -47,7 +47,11 @@ export class WHEPAdapter implements Adapter {
   }
 
   async connect(opts?: AdapterConnectOptions) {
-    await this.initSdpExchange();
+    try {
+      await this.initSdpExchange();
+    } catch (error) {
+      console.error((error as Error).toString());
+    }
   }
 
   private async initSdpExchange() {
@@ -132,6 +136,7 @@ export class WHEPAdapter implements Adapter {
 
   private async requestOffer() {
     if (this.whepType === WHEPType.Server) {
+      this.log(`Requesting offer from: ${this.channelUrl.href}`);
       const response = await fetch(this.channelUrl.href, {
         method: 'POST',
         headers: {
@@ -154,7 +159,11 @@ export class WHEPAdapter implements Adapter {
         }
         this.log('WHEP Resource', this.resource);
         const offer = await response.text();
+        this.log('Received offer', offer);
         return offer;
+      } else {
+        const serverMessage = await response.text();
+        throw new Error(serverMessage);
       }
     }
   }
