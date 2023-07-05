@@ -24,6 +24,11 @@ export class WHEPAdapter implements Adapter {
     onError: (error: string) => void
   ) {
     this.channelUrl = channelUrl;
+    if (typeof this.channelUrl === 'string') {
+      throw new Error(
+        `channelUrl parameter expected to be an URL not a string`
+      );
+    }
     this.whepType = WHEPType.Client;
 
     this.onErrorHandler = onError;
@@ -134,10 +139,22 @@ export class WHEPAdapter implements Adapter {
     }
   }
 
+  private getResouceUrlFromHeaders(headers: Headers): string | null {
+    if (headers.get('Location') && headers.get('Location')?.match(/^\//)) {
+      const resourceUrl = new URL(
+        headers.get('Location')!,
+        this.channelUrl.origin
+      );
+      return resourceUrl.toString();
+    } else {
+      return headers.get('Location');
+    }
+  }
+
   private async requestOffer() {
     if (this.whepType === WHEPType.Server) {
-      this.log(`Requesting offer from: ${this.channelUrl.href}`);
-      const response = await fetch(this.channelUrl.href, {
+      this.log(`Requesting offer from: ${this.channelUrl}`);
+      const response = await fetch(this.channelUrl.toString(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/sdp'
@@ -145,18 +162,7 @@ export class WHEPAdapter implements Adapter {
         body: ''
       });
       if (response.ok) {
-        if (
-          response.headers.get('Location') &&
-          response.headers.get('Location')?.match(/^\//)
-        ) {
-          const resourceUrl = new URL(
-            response.headers.get('Location')!,
-            this.channelUrl.origin
-          );
-          this.resource = resourceUrl.toString();
-        } else {
-          this.resource = response.headers.get('Location');
-        }
+        this.resource = this.getResouceUrlFromHeaders(response.headers);
         this.log('WHEP Resource', this.resource);
         const offer = await response.text();
         this.log('Received offer', offer);
@@ -200,7 +206,8 @@ export class WHEPAdapter implements Adapter {
     const offer = this.localPeer.localDescription;
 
     if (this.whepType === WHEPType.Client && offer) {
-      const response = await fetch(this.channelUrl.href, {
+      this.log(`Sending offer to ${this.channelUrl}`);
+      const response = await fetch(this.channelUrl.toString(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/sdp'
@@ -209,7 +216,7 @@ export class WHEPAdapter implements Adapter {
       });
 
       if (response.ok) {
-        this.resource = response.headers.get('Location');
+        this.resource = this.getResouceUrlFromHeaders(response.headers);
         this.log('WHEP Resource', this.resource);
         const answer = await response.text();
         await this.localPeer.setRemoteDescription({
