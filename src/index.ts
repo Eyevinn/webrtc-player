@@ -224,7 +224,12 @@ export class WebRTCPlayer extends EventEmitter {
       this.onConnectionStats.bind(this),
       this.msStatsInterval
     );
-    await this.adapter.connect();
+    try {
+      await this.adapter.connect();
+    } catch (error) {
+      console.error(error);
+      this.stop();
+    }
   }
 
   mute() {

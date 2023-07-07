@@ -81,12 +81,17 @@ export class WHEPAdapter implements Adapter {
           sdp: offer
         });
         const answer = await this.localPeer.createAnswer();
-        await this.localPeer.setLocalDescription(answer);
-        this.waitingForCandidates = true;
-        this.iceGatheringTimeout = setTimeout(
-          this.onIceGatheringTimeout.bind(this),
-          DEFAULT_CONNECT_TIMEOUT
-        );
+        try {
+          await this.localPeer.setLocalDescription(answer);
+          this.waitingForCandidates = true;
+          this.iceGatheringTimeout = setTimeout(
+            this.onIceGatheringTimeout.bind(this),
+            DEFAULT_CONNECT_TIMEOUT
+          );
+        } catch (error) {
+          this.log(answer.sdp);
+          throw error;
+        }
       }
     }
   }
