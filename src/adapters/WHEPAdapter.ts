@@ -59,6 +59,18 @@ export class WHEPAdapter implements Adapter {
     }
   }
 
+  async disconnect() {
+    if (this.resource) {
+      this.log(`Disconnecting by removing resource ${this.resource}`);
+      const response = await fetch(this.resource, {
+        method: 'DELETE'
+      });
+      if (response.ok) {
+        this.log(`Successfully removed resource`);
+      }
+    }
+  }
+
   private async initSdpExchange() {
     clearTimeout(this.iceGatheringTimeout);
 

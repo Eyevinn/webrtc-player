@@ -9,4 +9,5 @@ export interface Adapter {
   getPeer(): RTCPeerConnection | undefined;
   resetPeer(newPeer: RTCPeerConnection): void;
   connect(opts?: AdapterConnectOptions): Promise<void>;
+  disconnect(): Promise<void>;
 }

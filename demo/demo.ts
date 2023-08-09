@@ -151,6 +151,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     await player.load(new URL(channelUrl));
   });
 
+  const stopButton = document.querySelector<HTMLButtonElement>('#stop');
+  stopButton?.addEventListener('click', async () => {
+    await player.unload();
+  });
+
   clientTimeMsElement = document.querySelector<HTMLSpanElement>('#localTimeMs');
   window.setInterval(updateClientClock, 1);
 });
