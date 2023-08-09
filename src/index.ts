@@ -240,6 +240,11 @@ export class WebRTCPlayer extends EventEmitter {
     this.videoElement.muted = false;
   }
 
+  async unload() {
+    await this.adapter.disconnect();
+    this.stop();
+  }
+
   stop() {
     clearInterval(this.statsInterval);
     this.peer.close();

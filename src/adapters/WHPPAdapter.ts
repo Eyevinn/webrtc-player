@@ -37,6 +37,10 @@ export class WHPPAdapter implements Adapter {
     }
   }
 
+  async disconnect() {
+    return;
+  }
+
   private log(...args: any[]) {
     if (this.debug) {
       console.log('WebRTC-player', ...args);
