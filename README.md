@@ -79,7 +79,7 @@ Compatible with WebRTC media servers that implements the [WebRTC HTTP Playback P
 
 ### `whep`
 
-Compatible with WebRTC media servers that implements the [WebRTC HTTP Egress Protocol](https://www.ietf.org/id/draft-murillo-whep-00.html).
+Compatible with WebRTC media servers that implements the [WebRTC HTTP Egress Protocol](https://www.ietf.org/id/draft-murillo-whep-00.html). Instructions on how to generate a WHEP test stream [here](docs/whep-source.md).
 
 ### `se.eyevinn.webrtc`
 
