@@ -9,7 +9,7 @@ const BROADCASTER_URL =
   'https://broadcaster.lab.sto.eyevinn.technology:8443/broadcaster';
 const WHEP_URL =
   process.env.WHEP_URL ||
-  'https://wrtc-edge.lab.sto.eyevinn.technology:8443/whep/channel/sthlm';
+  'https://srtwhep.lab.sto.eyevinn.technology:8443/channel';
 
 async function getChannels(broadcasterUrl: string) {
   const response = await fetch(broadcasterUrl + '/channel');
