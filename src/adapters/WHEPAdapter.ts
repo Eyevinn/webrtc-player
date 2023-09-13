@@ -39,7 +39,6 @@ export class WHEPAdapter implements Adapter {
     this.onErrorHandler = onError;
     this.audio = !this.opts.videoOnly;
     this.video = !this.opts.audioOnly;
-    console.log('this.audio, this.video', this.audio, this.video);
     this.resetPeer(peer);
   }
 
@@ -232,7 +231,6 @@ export class WHEPAdapter implements Adapter {
 
     if (this.whepType === WHEPType.Client && offer) {
       this.log(`Sending offer to ${this.channelUrl}`);
-      console.log('opts', this.opts);
       const response = await fetch(this.channelUrl.toString(), {
         method: 'POST',
         headers: {
