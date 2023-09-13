@@ -15,7 +15,7 @@ enum Message {
   INITIAL_CONNECTION_FAILED = 'initial-connection-failed'
 }
 
-interface WebRTCPlayerOptions {
+export interface WebRTCPlayerOptions {
   video: HTMLVideoElement;
   type: string;
   adapterFactory?: AdapterFactoryFunction;
@@ -25,6 +25,8 @@ interface WebRTCPlayerOptions {
   statsTypeFilter?: string; // regexp
   detectTimeout?: boolean;
   timeoutThreshold?: number;
+  audioOnly?: boolean;
+  videoOnly?: boolean;
 }
 
 const RECONNECT_ATTEMPTS = 2;
@@ -47,9 +49,11 @@ export class WebRTCPlayer extends EventEmitter {
   private mediaTimeoutThreshold = 30000;
   private timeoutThresholdCounter = 0;
   private bytesReceived = 0;
+  private opts: WebRTCPlayerOptions;
 
   constructor(opts: WebRTCPlayerOptions) {
     super();
+    this.opts = opts;
     this.videoElement = opts.video;
     this.adapterType = opts.type;
     this.adapterFactory = opts.adapterFactory;
@@ -203,13 +207,15 @@ export class WebRTCPlayer extends EventEmitter {
         this.adapterType,
         this.peer,
         this.channelUrl,
-        this.onErrorHandler.bind(this)
+        this.onErrorHandler.bind(this),
+        this.opts
       );
     } else if (this.adapterFactory) {
       this.adapter = this.adapterFactory(
         this.peer,
         this.channelUrl,
-        this.onErrorHandler.bind(this)
+        this.onErrorHandler.bind(this),
+        this.opts
       );
     }
     if (!this.adapter) {
