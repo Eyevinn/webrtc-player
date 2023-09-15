@@ -86,6 +86,16 @@ export class WHEPAdapter implements Adapter {
       if (this.audio)
         this.localPeer.addTransceiver('audio', { direction: 'recvonly' });
       const offer = await this.localPeer.createOffer();
+
+      // To add NACK in offer we have to add it manually see https://bugs.chromium.org/p/webrtc/issues/detail?id=4543 for details
+      if (offer.sdp) {
+        let opusCodecId = offer.sdp.match(/a=rtpmap:(\d+) opus\/48000\/2/);
+
+        if(opusCodecId !== null) {
+          offer.sdp = offer.sdp.replace("opus/48000/2\r\n", "opus/48000/2\r\na=rtcp-fb:"+opusCodecId[1]+ " nack\r\n")
+        }
+      }
+      
       await this.localPeer.setLocalDescription(offer);
       this.waitingForCandidates = true;
       this.iceGatheringTimeout = setTimeout(
