@@ -86,6 +86,19 @@ export class WHEPAdapter implements Adapter {
       if (this.audio)
         this.localPeer.addTransceiver('audio', { direction: 'recvonly' });
       const offer = await this.localPeer.createOffer();
+
+      // To add NACK in offer we have to add it manually see https://bugs.chromium.org/p/webrtc/issues/detail?id=4543 for details
+      if (offer.sdp) {
+        const opusCodecId = offer.sdp.match(/a=rtpmap:(\d+) opus\/48000\/2/);
+
+        if (opusCodecId !== null) {
+          offer.sdp = offer.sdp.replace(
+            'opus/48000/2\r\n',
+            'opus/48000/2\r\na=rtcp-fb:" + opusCodecId[1] + " nack\r\n'
+          );
+        }
+      }
+
       await this.localPeer.setLocalDescription(offer);
       this.waitingForCandidates = true;
       this.iceGatheringTimeout = setTimeout(
@@ -251,14 +264,24 @@ export class WHEPAdapter implements Adapter {
         this.log(`server does not support client-offer, need to reconnect`);
         this.whepType = WHEPType.Server;
         this.onErrorHandler('reconnectneeded');
-      } else if (response.status === 406 && this.audio && !this.mediaConstraints.audioOnly && !this.mediaConstraints.videoOnly) {
+      } else if (
+        response.status === 406 &&
+        this.audio &&
+        !this.mediaConstraints.audioOnly &&
+        !this.mediaConstraints.videoOnly
+      ) {
         this.log(
           `maybe server does not support audio. Let's retry without audio`
         );
         this.audio = false;
         this.video = true;
         this.onErrorHandler('reconnectneeded');
-      } else if (response.status === 406 && this.video && !this.mediaConstraints.audioOnly && !this.mediaConstraints.videoOnly) {
+      } else if (
+        response.status === 406 &&
+        this.video &&
+        !this.mediaConstraints.audioOnly &&
+        !this.mediaConstraints.videoOnly
+      ) {
         this.log(
           `maybe server does not support video. Let's retry without video`
         );
