@@ -23,7 +23,7 @@ export interface MediaConstraints {
 const MediaConstraintsDefaults: MediaConstraints = {
   audioOnly: false,
   videoOnly: false
-}
+};
 
 interface WebRTCPlayerOptions {
   video: HTMLVideoElement;
@@ -62,7 +62,10 @@ export class WebRTCPlayer extends EventEmitter {
 
   constructor(opts: WebRTCPlayerOptions) {
     super();
-    this.mediaConstraints = { ...MediaConstraintsDefaults, ...opts.mediaConstraints };
+    this.mediaConstraints = {
+      ...MediaConstraintsDefaults,
+      ...opts.mediaConstraints
+    };
     this.videoElement = opts.video;
     this.adapterType = opts.type;
     this.adapterFactory = opts.adapterFactory;
