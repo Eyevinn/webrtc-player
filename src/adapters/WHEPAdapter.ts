@@ -94,7 +94,7 @@ export class WHEPAdapter implements Adapter {
         if (opusCodecId !== null) {
           offer.sdp = offer.sdp.replace(
             'opus/48000/2\r\n',
-            'opus/48000/2\r\na=rtcp-fb:" + opusCodecId[1] + " nack\r\n'
+            'opus/48000/2\r\na=rtcp-fb:' + opusCodecId[1] + ' nack\r\n'
           );
         }
       }
