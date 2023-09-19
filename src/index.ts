@@ -196,7 +196,7 @@ export class WebRTCPlayer extends EventEmitter {
 
   private onTrack(event: RTCTrackEvent) {
     for (const stream of event.streams) {
-      if (stream.id === 'feedbackvideomslabel' || this.videoElement.srcObject) {
+      if (stream.id === 'feedbackvideomslabel') {
         continue;
       }
 
@@ -207,7 +207,16 @@ export class WebRTCPlayer extends EventEmitter {
           ' video ' +
           stream.getVideoTracks().length
       );
-      this.videoElement.srcObject = stream;
+
+      // Create a new MediaStream if we don't have one
+      if (!this.videoElement.srcObject) {
+        this.videoElement.srcObject = new MediaStream();
+      }
+
+      // We might have one stream of both audio and video, or separate streams for audio and video
+      for (const track of stream.getTracks()) {
+        (this.videoElement.srcObject as MediaStream).addTrack(track);
+      }
     }
   }
 
