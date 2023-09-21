@@ -57,7 +57,7 @@ player.on('stats:inbound-rtp', (report) => {
 
 ## Options
 
-```
+```javascript
 {
   video: HTMLVideoElement;
   iceServers: RTCIceServer[]; // ICE server config
