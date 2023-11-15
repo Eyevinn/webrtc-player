@@ -62,6 +62,7 @@ export class WHEPAdapter implements Adapter {
       await this.initSdpExchange();
     } catch (error) {
       console.error((error as Error).toString());
+      this.onErrorHandler('connecterror');
     }
   }
 
