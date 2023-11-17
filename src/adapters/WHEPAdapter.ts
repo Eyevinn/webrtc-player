@@ -11,6 +11,7 @@ export enum WHEPType {
 export class WHEPAdapter implements Adapter {
   private localPeer: RTCPeerConnection | undefined;
   private channelUrl: URL;
+  private authKey?: string;
   private debug = false;
   private whepType: WHEPType;
   private waitingForCandidates = false;
@@ -25,7 +26,8 @@ export class WHEPAdapter implements Adapter {
     peer: RTCPeerConnection,
     channelUrl: URL,
     onError: (error: string) => void,
-    mediaConstraints: MediaConstraints
+    mediaConstraints: MediaConstraints,
+    authKey: string | undefined
   ) {
     this.mediaConstraints = mediaConstraints;
     this.channelUrl = channelUrl;
@@ -35,6 +37,7 @@ export class WHEPAdapter implements Adapter {
       );
     }
     this.whepType = WHEPType.Client;
+    this.authKey = authKey;
 
     this.onErrorHandler = onError;
     this.audio = !this.mediaConstraints.videoOnly;
@@ -69,8 +72,11 @@ export class WHEPAdapter implements Adapter {
   async disconnect() {
     if (this.resource) {
       this.log(`Disconnecting by removing resource ${this.resource}`);
+      const headers: {Authorization?: string} = {};
+      this.authKey && (headers['Authorization'] = this.authKey);
       const response = await fetch(this.resource, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers,
       });
       if (response.ok) {
         this.log(`Successfully removed resource`);
@@ -192,11 +198,14 @@ export class WHEPAdapter implements Adapter {
   private async requestOffer() {
     if (this.whepType === WHEPType.Server) {
       this.log(`Requesting offer from: ${this.channelUrl}`);
+      const headers: {'Content-Type': string, Authorization?: string} = {
+        'Content-Type': 'application/sdp'
+      };
+      this.authKey && (headers['Authorization'] = this.authKey);
+
       const response = await fetch(this.channelUrl.toString(), {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/sdp'
-        },
+        headers,
         body: ''
       });
       if (response.ok) {
@@ -221,11 +230,13 @@ export class WHEPAdapter implements Adapter {
     if (this.whepType === WHEPType.Server && this.resource) {
       const answer = this.localPeer.localDescription;
       if (answer) {
+        const headers: {'Content-Type': string, Authorization?: string} = {
+          'Content-Type': 'application/sdp'
+        };
+        this.authKey && (headers['Authorization'] = this.authKey);
         const response = await fetch(this.resource, {
           method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/sdp'
-          },
+          headers,
           body: answer.sdp
         });
         if (!response.ok) {
@@ -245,11 +256,13 @@ export class WHEPAdapter implements Adapter {
 
     if (this.whepType === WHEPType.Client && offer) {
       this.log(`Sending offer to ${this.channelUrl}`);
+      const headers: {'Content-Type': string, Authorization?: string} = {
+        'Content-Type': 'application/sdp'
+      };
+      this.authKey && (headers['Authorization'] = this.authKey);
       const response = await fetch(this.channelUrl.toString(), {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/sdp'
-        },
+        headers,
         body: offer.sdp
       });
 

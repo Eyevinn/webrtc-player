@@ -9,7 +9,8 @@ export interface AdapterFactoryFunction {
     peer: RTCPeerConnection,
     channelUrl: URL,
     onError: (error: string) => void,
-    mediaConstraints: MediaConstraints
+    mediaConstraints: MediaConstraints,
+    authKey: string | undefined
   ): Adapter;
 }
 
@@ -21,7 +22,8 @@ const WHPPAdapterFactory: AdapterFactoryFunction = (
   peer,
   channelUrl,
   onError,
-  mediaConstraints
+  mediaConstraints,
+  authKey
 ) => {
   return new WHPPAdapter(peer, channelUrl, onError);
 };
@@ -30,7 +32,8 @@ const EyevinnAdapterFactory: AdapterFactoryFunction = (
   peer,
   channelUrl,
   onError,
-  mediaConstraints
+  mediaConstraints,
+  authKey
 ) => {
   return new EyevinnAdapter(peer, channelUrl, onError);
 };
@@ -39,9 +42,10 @@ const WHEPAdapterFactory: AdapterFactoryFunction = (
   peer,
   channelUrl,
   onError,
-  mediaConstraints
+  mediaConstraints,
+  authKey
 ) => {
-  return new WHEPAdapter(peer, channelUrl, onError, mediaConstraints);
+  return new WHEPAdapter(peer, channelUrl, onError, mediaConstraints, authKey);
 };
 
 const adapters: AdapterMap = {
@@ -55,9 +59,10 @@ export function AdapterFactory(
   peer: RTCPeerConnection,
   channelUrl: URL,
   onError: (error: string) => void,
-  mediaConstraints: MediaConstraints
+  mediaConstraints: MediaConstraints,
+  authKey?: string
 ): Adapter {
-  return adapters[type](peer, channelUrl, onError, mediaConstraints);
+  return adapters[type](peer, channelUrl, onError, mediaConstraints, authKey);
 }
 
 export function ListAvailableAdapters(): string[] {

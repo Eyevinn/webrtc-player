@@ -49,6 +49,7 @@ export class WebRTCPlayer extends EventEmitter {
   private iceServers: RTCIceServer[];
   private debug: boolean;
   private channelUrl: URL = <URL>{};
+  private authKey?: string = undefined;
   private reconnectAttemptsLeft: number = RECONNECT_ATTEMPTS;
   private csaiManager?: CSAIManager;
   private adapter: Adapter = <Adapter>{};
@@ -94,8 +95,9 @@ export class WebRTCPlayer extends EventEmitter {
     }
   }
 
-  async load(channelUrl: URL) {
+  async load(channelUrl: URL, authKey: string | undefined = undefined) {
     this.channelUrl = channelUrl;
+    this.authKey = authKey;
     this.connect();
   }
 
@@ -235,14 +237,16 @@ export class WebRTCPlayer extends EventEmitter {
         this.peer,
         this.channelUrl,
         this.onErrorHandler.bind(this),
-        this.mediaConstraints
+        this.mediaConstraints,
+        this.authKey
       );
     } else if (this.adapterFactory) {
       this.adapter = this.adapterFactory(
         this.peer,
         this.channelUrl,
         this.onErrorHandler.bind(this),
-        this.mediaConstraints
+        this.mediaConstraints,
+        this.authKey
       );
     }
     if (!this.adapter) {
