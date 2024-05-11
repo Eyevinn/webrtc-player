@@ -12,6 +12,7 @@ enum Message {
   NO_MEDIA = 'no-media',
   MEDIA_RECOVERED = 'media-recovered',
   PEER_CONNECTION_FAILED = 'peer-connection-failed',
+  PEER_CONNECTION_CONNECTED = 'peer-connection-connected',
   INITIAL_CONNECTION_FAILED = 'initial-connection-failed',
   CONNECT_ERROR = 'connect-error'
 }
@@ -130,6 +131,7 @@ export class WebRTCPlayer extends EventEmitter {
       this.reconnectAttemptsLeft--;
     } else if (this.peer.connectionState === 'connected') {
       this.log('Connected');
+      this.emit(Message.PEER_CONNECTION_CONNECTED);
       this.reconnectAttemptsLeft = RECONNECT_ATTEMPTS;
     }
   }
