@@ -14,7 +14,9 @@ enum Message {
   PEER_CONNECTION_FAILED = 'peer-connection-failed',
   PEER_CONNECTION_CONNECTED = 'peer-connection-connected',
   INITIAL_CONNECTION_FAILED = 'initial-connection-failed',
-  CONNECT_ERROR = 'connect-error'
+  CONNECT_ERROR = 'connect-error',
+  PLAYER_MUTED = 'player-muted',
+  PLAYER_UNMUTED = 'player-unmuted'
 }
 
 export interface MediaConstraints {
@@ -94,6 +96,13 @@ export class WebRTCPlayer extends EventEmitter {
         }
       });
     }
+    this.videoElement.addEventListener('volumechange', () => {
+      if (this.videoElement.muted) {
+        this.emit(Message.PLAYER_MUTED);
+      } else {
+        this.emit(Message.PLAYER_UNMUTED);
+      }
+    });
   }
 
   async load(channelUrl: URL, authKey: string | undefined = undefined) {
