@@ -68,6 +68,9 @@
     "eslint-plugin-prettier": "^4.2.1",
     "husky": "^8.0.3"
   },
+  "overrides": {
+    "minimatch": "^3.1.5"
+  },
   "dependencies": {
     "@eyevinn/csai-manager": "^0.1.2",
     "@eyevinn/whpp-client": "^0.1.2",
