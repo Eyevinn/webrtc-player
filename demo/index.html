@@ -5,7 +5,13 @@
     <title>WebRTC Player</title>
     <script type="module" src="./demo.ts"></script>
     <style>
-      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
       :root {
         --bg: #0d0d0d;
@@ -21,11 +27,13 @@
         --green: #4caf7d;
       }
 
-      html, body {
+      html,
+      body {
         height: 100%;
         background: var(--bg);
         color: var(--text);
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          sans-serif;
         font-size: 14px;
       }
 
@@ -92,14 +100,29 @@
         flex-shrink: 0;
       }
 
-      .status-pill.connecting { color: var(--orange); }
-      .status-pill.connecting .status-dot { background: var(--orange); animation: pulse 1.2s ease-in-out infinite; }
-      .status-pill.live { color: var(--blue); }
-      .status-pill.live .status-dot { background: var(--blue); animation: pulse 1.2s ease-in-out infinite; }
+      .status-pill.connecting {
+        color: var(--orange);
+      }
+      .status-pill.connecting .status-dot {
+        background: var(--orange);
+        animation: pulse 1.2s ease-in-out infinite;
+      }
+      .status-pill.live {
+        color: var(--blue);
+      }
+      .status-pill.live .status-dot {
+        background: var(--blue);
+        animation: pulse 1.2s ease-in-out infinite;
+      }
 
       @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.3; }
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.3;
+        }
       }
 
       .header-btn {
@@ -159,7 +182,9 @@
       .field {
         margin-bottom: 10px;
       }
-      .field:last-child { margin-bottom: 0; }
+      .field:last-child {
+        margin-bottom: 0;
+      }
 
       .field-label {
         display: block;
@@ -169,7 +194,7 @@
         margin-bottom: 5px;
       }
 
-      input[type="text"] {
+      input[type='text'] {
         width: 100%;
         background: var(--bg);
         border: 1px solid var(--border);
@@ -180,7 +205,9 @@
         outline: none;
         transition: border-color 0.15s;
       }
-      input[type="text"]:focus { border-color: var(--blue); }
+      input[type='text']:focus {
+        border-color: var(--blue);
+      }
 
       .btn {
         display: flex;
@@ -196,10 +223,22 @@
         border: none;
         transition: opacity 0.15s;
       }
-      .btn:hover { opacity: 0.85; }
-      .btn:active { opacity: 0.7; }
-      .btn-primary { background: var(--blue); color: #fff; border: 1px solid var(--blue); }
-      .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+      .btn:hover {
+        opacity: 0.85;
+      }
+      .btn:active {
+        opacity: 0.7;
+      }
+      .btn-primary {
+        background: var(--blue);
+        color: #fff;
+        border: 1px solid var(--blue);
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
 
       .btn-row {
         display: flex;
@@ -240,7 +279,7 @@
         cursor: pointer;
         user-select: none;
       }
-      .checkbox-row input[type="checkbox"] {
+      .checkbox-row input[type='checkbox'] {
         width: 14px;
         height: 14px;
         accent-color: var(--blue);
@@ -259,8 +298,12 @@
         margin-bottom: 6px;
         font-variant-numeric: tabular-nums;
       }
-      .stat-card:last-child { margin-bottom: 0; }
-      .stat-card.has-value { color: var(--text); }
+      .stat-card:last-child {
+        margin-bottom: 0;
+      }
+      .stat-card.has-value {
+        color: var(--text);
+      }
 
       /* ── Main content ── */
       .content {
@@ -313,15 +356,29 @@
         color: var(--text-muted);
         flex-shrink: 0;
       }
-      .app-footer a { color: var(--blue); text-decoration: none; }
-      .app-footer a:hover { text-decoration: underline; }
+      .app-footer a {
+        color: var(--blue);
+        text-decoration: none;
+      }
+      .app-footer a:hover {
+        text-decoration: underline;
+      }
 
       /* ── Responsive ── */
       @media (max-width: 760px) {
-        body { overflow: auto; }
-        .app-body { grid-template-columns: 1fr; }
-        .video-area { min-height: 240px; }
-        .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+        body {
+          overflow: auto;
+        }
+        .app-body {
+          grid-template-columns: 1fr;
+        }
+        .video-area {
+          min-height: 240px;
+        }
+        .sidebar {
+          border-right: none;
+          border-bottom: 1px solid var(--border);
+        }
       }
 
       /* Toast */
@@ -355,11 +412,13 @@
     </style>
   </head>
   <body>
-
     <header class="app-header">
       <div class="header-logo">
         <picture>
-          <source srcset="./logo-darkmode.png" media="(prefers-color-scheme: dark)" />
+          <source
+            srcset="./logo-darkmode.png"
+            media="(prefers-color-scheme: dark)"
+          />
           <img src="./logo-lightmode.png" alt="Eyevinn Technology" />
         </picture>
       </div>
@@ -369,8 +428,21 @@
         <span class="status-dot"></span>
         <span id="status-label">Idle</span>
       </div>
-      <button id="share-btn" class="header-btn" title="Copy shareable URL to clipboard">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <button
+        id="share-btn"
+        class="header-btn"
+        title="Copy shareable URL to clipboard"
+      >
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
           <polyline points="16 6 12 2 8 6"></polyline>
           <line x1="12" y1="2" x2="12" y2="15"></line>
@@ -381,7 +453,6 @@
 
     <div class="app-body">
       <aside class="sidebar">
-
         <div class="card">
           <p class="card-label">Adapter</p>
           <div id="adapters"></div>
@@ -391,7 +462,11 @@
           <p class="card-label">Channel URL</p>
           <div class="field">
             <label class="field-label" for="channelUrl">URL</label>
-            <input id="channelUrl" type="text" placeholder="https://&hellip;/channel" />
+            <input
+              id="channelUrl"
+              type="text"
+              placeholder="https://&hellip;/channel"
+            />
           </div>
           <div class="btn-row">
             <button id="play" class="btn btn-primary">&#9654; Play</button>
@@ -407,31 +482,47 @@
               <span>Preroll ad</span>
             </label>
           </div>
-          <div class="field" id="prerollUrlField" style="display:none">
+          <div class="field" id="prerollUrlField" style="display: none">
             <label class="field-label" for="prerollUrl">VMAP URL</label>
-            <input id="prerollUrl" type="text" value="https://eyevinn.adtest.eyevinn.technology/api/v1/vmap?bp=0&amp;dur=10" />
+            <input
+              id="prerollUrl"
+              type="text"
+              value="https://eyevinn.adtest.eyevinn.technology/api/v1/vmap?bp=0&amp;dur=10"
+            />
           </div>
         </div>
 
         <div class="card">
           <p class="card-label">Stats</p>
           <div id="stats-current-rtt" class="stat-card">RTT: &mdash;</div>
-          <div id="stats-incoming-bitrate" class="stat-card">Bitrate: &mdash;</div>
-          <div id="stats-packetloss" class="stat-card">Packets Lost: &mdash;</div>
+          <div id="stats-incoming-bitrate" class="stat-card">
+            Bitrate: &mdash;
+          </div>
+          <div id="stats-packetloss" class="stat-card">
+            Packets Lost: &mdash;
+          </div>
         </div>
 
         <div class="card">
           <p class="card-label">Client Time</p>
           <div class="stat-card"><span id="localTimeMs">&mdash;</span></div>
         </div>
-
       </aside>
 
       <div class="content">
         <div class="video-area">
           <video autoplay muted playsinline></video>
           <div id="video-placeholder" class="video-placeholder">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
               <polygon points="23 7 16 12 23 17 23 7"></polygon>
               <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
             </svg>
@@ -442,11 +533,21 @@
     </div>
 
     <footer class="app-footer">
-      <span>By <a href="https://www.eyevinn.se" target="_blank" rel="noopener">Eyevinn Technology AB</a></span>
+      <span
+        >By
+        <a href="https://www.eyevinn.se" target="_blank" rel="noopener"
+          >Eyevinn Technology AB</a
+        ></span
+      >
       <span>&middot;</span>
-      <a href="https://github.com/Eyevinn/webrtc-player" target="_blank" rel="noopener">Open source on GitHub</a>
+      <a
+        href="https://github.com/Eyevinn/webrtc-player"
+        target="_blank"
+        rel="noopener"
+        >Open source on GitHub</a
+      >
     </footer>
 
-  <div id="toast"></div>
+    <div id="toast"></div>
   </body>
 </html>
