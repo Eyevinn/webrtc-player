@@ -6,7 +6,7 @@ Contributions are welcome, see below for more information.
 
 [Online Demo](https://webrtc.player.eyevinn.technology/)
 
-![Screenshot of demo application](screenshot.png)
+![Screenshot of demo application](https://github.com/user-attachments/assets/3fc92d30-9ca7-46d6-9979-3525a68ac2b6)
 
 ## Installation
 

@@ -1,105 +1,553 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Media Server independent WebRTC player</title>
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css"
-    />
+    <meta charset="utf-8" />
+    <title>WebRTC Player</title>
     <script type="module" src="./demo.ts"></script>
-    <style type="text/css">
-      #videocontainer {
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #0d0d0d;
+        --surface: #161616;
+        --surface2: #1e1e1e;
+        --border: #2b2b2b;
+        --text: #ebebeb;
+        --text-muted: #606060;
+        --text-label: #a0a0a0;
+        --blue: #4c9ff5;
+        --red: #e63946;
+        --orange: #f4a261;
+        --green: #4caf7d;
+      }
+
+      html,
+      body {
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          sans-serif;
+        font-size: 14px;
+      }
+
+      body {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      /* ── Header ── */
+      .app-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        height: 52px;
+        padding: 0 20px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+      }
+
+      .header-logo img {
+        height: 28px;
+        display: block;
+      }
+
+      .header-divider {
+        width: 1px;
+        height: 20px;
+        background: var(--border);
+        flex-shrink: 0;
+      }
+
+      .header-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text);
+        flex: 1;
+      }
+
+      .status-pill {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 100px;
+        padding: 4px 10px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.77px;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        user-select: none;
+        line-height: 1.5;
+      }
+
+      .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--text-muted);
+        flex-shrink: 0;
+      }
+
+      .status-pill.connecting {
+        color: var(--orange);
+      }
+      .status-pill.connecting .status-dot {
+        background: var(--orange);
+        animation: pulse 1.2s ease-in-out infinite;
+      }
+      .status-pill.live {
+        color: var(--blue);
+      }
+      .status-pill.live .status-dot {
+        background: var(--blue);
+        animation: pulse 1.2s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.3;
+        }
+      }
+
+      .header-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: transparent;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 5px 10px;
+        font-size: 12px;
+        font-weight: 500;
+        color: rgb(160, 160, 160);
+        cursor: pointer;
+        transition: border-color 0.15s, color 0.15s;
+      }
+      .header-btn:hover {
+        border-color: var(--blue);
+        color: var(--blue);
+      }
+
+      /* ── Body layout ── */
+      .app-body {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        flex: 1;
+        overflow: hidden;
+      }
+
+      /* ── Sidebar ── */
+      .sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px;
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        overflow-y: auto;
+      }
+
+      .card {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px;
+      }
+
+      .card-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-bottom: 12px;
+      }
+
+      .field {
+        margin-bottom: 10px;
+      }
+      .field:last-child {
+        margin-bottom: 0;
+      }
+
+      .field-label {
+        display: block;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-label);
+        margin-bottom: 5px;
+      }
+
+      input[type='text'] {
         width: 100%;
-        max-width: 800px;
-        margin: 0 auto;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 7px 9px;
+        font-size: 12px;
+        color: var(--text);
+        outline: none;
+        transition: border-color 0.15s;
+      }
+      input[type='text']:focus {
+        border-color: var(--blue);
+      }
+
+      .btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        width: 100%;
+        padding: 9px 14px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        transition: opacity 0.15s;
+      }
+      .btn:hover {
+        opacity: 0.85;
+      }
+      .btn:active {
+        opacity: 0.7;
+      }
+      .btn-primary {
+        background: var(--blue);
+        color: #fff;
+        border: 1px solid var(--blue);
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+
+      .btn-row {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      /* Adapter buttons */
+      #adapters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      #adapters button {
+        background: transparent;
+        border: 1px solid var(--border);
+        border-radius: 100px;
+        padding: 4px 12px;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text);
+        cursor: pointer;
+        transition: border-color 0.15s, color 0.15s;
+      }
+      #adapters button.active,
+      #adapters button:hover {
+        border-color: var(--blue);
+        color: var(--blue);
+      }
+
+      /* Checkbox row */
+      .checkbox-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: var(--text);
+        cursor: pointer;
+        user-select: none;
+      }
+      .checkbox-row input[type='checkbox'] {
+        width: 14px;
+        height: 14px;
+        accent-color: var(--blue);
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+
+      /* Stat cards */
+      .stat-card {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 6px 9px;
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-bottom: 6px;
+        font-variant-numeric: tabular-nums;
+      }
+      .stat-card:last-child {
+        margin-bottom: 0;
+      }
+      .stat-card.has-value {
+        color: var(--text);
+      }
+
+      /* ── Main content ── */
+      .content {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: var(--bg);
+      }
+
+      .video-area {
         position: relative;
+        flex: 1;
+        background: #000;
+        overflow: hidden;
       }
-      video {
+
+      .video-area video {
         width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
       }
-      input {
-        width: 70%;
+
+      .video-placeholder {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        color: var(--text-muted);
+        font-size: 13px;
+        pointer-events: none;
       }
-      footer {
-        font-size: 0.8em;
-        text-align: center;
+
+      .video-placeholder svg {
+        opacity: 0.45;
       }
-      #input {
-        display: none;
+
+      /* ── Footer ── */
+      .app-footer {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 20px;
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        font-size: 11px;
+        color: var(--text-muted);
+        flex-shrink: 0;
       }
-      button {
-        margin: 4px;
+      .app-footer a {
+        color: var(--blue);
+        text-decoration: none;
       }
-      #preroll {
-        width: 20px;
+      .app-footer a:hover {
+        text-decoration: underline;
       }
-      #stats {
-        font-size: 0.6em;
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
+
+      /* ── Responsive ── */
+      @media (max-width: 760px) {
+        body {
+          overflow: auto;
+        }
+        .app-body {
+          grid-template-columns: 1fr;
+        }
+        .video-area {
+          min-height: 240px;
+        }
+        .sidebar {
+          border-right: none;
+          border-bottom: 1px solid var(--border);
+        }
       }
-      #wallclock {
-        text-align: center;
-        display: grid;
+
+      /* Toast */
+      #toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        pointer-events: none;
       }
-      #clientclock {
-        text-align: center;
-        display: grid;
+      .toast {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 12px;
+        color: var(--text);
+        pointer-events: all;
+        opacity: 0;
+        transform: translateY(8px);
+        transition: opacity 0.2s, transform 0.2s;
+        max-width: 280px;
+      }
+      .toast.visible {
+        opacity: 1;
+        transform: translateY(0);
       }
     </style>
   </head>
   <body>
-    <header>
-      <h1>Media Server independent WebRTC player</h1>
-    </header>
-    <section>
-      <p>Available adapters:</p>
-      <div id="adapters"></div>
-      <div id="input">
-        <label for="channelUrl">URL</label>
-        <input id="channelUrl" type="text" value="" />
-        <button id="play">Play</button>
-        <button id="stop">Stop</button>
-        <input type="checkbox" id="preroll" />
-        <label for="preroll">Preroll</label>
-        <label for="prerollUrl">VMAP</label>
-        <input
-          id="prerollUrl"
-          type="text"
-          value="https://eyevinn.adtest.eyevinn.technology/api/v1/vmap?bp=0&dur=10"
-        />
+    <header class="app-header">
+      <div class="header-logo">
+        <picture>
+          <source
+            srcset="./logo-darkmode.png"
+            media="(prefers-color-scheme: dark)"
+          />
+          <img src="./logo-lightmode.png" alt="Eyevinn Technology" />
+        </picture>
       </div>
-      <div id="videocontainer">
-        <video autoplay muted controls playsinline></video>
+      <div class="header-divider"></div>
+      <span class="header-title">WebRTC Player</span>
+      <div id="status-pill" class="status-pill">
+        <span class="status-dot"></span>
+        <span id="status-label">Idle</span>
       </div>
-      <div id="wallclock">
-        <span id="Stockholm_z72a"></span>
-        <span style="font-size: 8pt" rel="nofollow"
-          >Atomic Wall clock provided by
-          <a href="https://time.is/" id="time_is_link">time.is</a></span
+      <button
+        id="share-btn"
+        class="header-btn"
+        title="Copy shareable URL to clipboard"
+      >
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
         >
-        <script src="//widget.time.is/t.js"></script>
-        <script>
-          time_is_widget.init({
-            Stockholm_z72a: {}
-          });
-        </script>
+          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+          <polyline points="16 6 12 2 8 6"></polyline>
+          <line x1="12" y1="2" x2="12" y2="15"></line>
+        </svg>
+        Share
+      </button>
+    </header>
+
+    <div class="app-body">
+      <aside class="sidebar">
+        <div class="card">
+          <p class="card-label">Adapter</p>
+          <div id="adapters"></div>
+        </div>
+
+        <div class="card">
+          <p class="card-label">Channel URL</p>
+          <div class="field">
+            <label class="field-label" for="channelUrl">URL</label>
+            <input
+              id="channelUrl"
+              type="text"
+              placeholder="https://&hellip;/channel"
+            />
+          </div>
+          <div class="btn-row">
+            <button id="play" class="btn btn-primary">&#9654; Play</button>
+            <button id="stop" class="btn btn-ghost">&#9632; Stop</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <p class="card-label">Options</p>
+          <div class="field">
+            <label class="checkbox-row">
+              <input type="checkbox" id="preroll" />
+              <span>Preroll ad</span>
+            </label>
+          </div>
+          <div class="field" id="prerollUrlField" style="display: none">
+            <label class="field-label" for="prerollUrl">VMAP URL</label>
+            <input
+              id="prerollUrl"
+              type="text"
+              value="https://eyevinn.adtest.eyevinn.technology/api/v1/vmap?bp=0&amp;dur=10"
+            />
+          </div>
+        </div>
+
+        <div class="card">
+          <p class="card-label">Stats</p>
+          <div id="stats-current-rtt" class="stat-card">RTT: &mdash;</div>
+          <div id="stats-incoming-bitrate" class="stat-card">
+            Bitrate: &mdash;
+          </div>
+          <div id="stats-packetloss" class="stat-card">
+            Packets Lost: &mdash;
+          </div>
+        </div>
+
+        <div class="card">
+          <p class="card-label">Client Time</p>
+          <div class="stat-card"><span id="localTimeMs">&mdash;</span></div>
+        </div>
+      </aside>
+
+      <div class="content">
+        <div class="video-area">
+          <video autoplay muted playsinline></video>
+          <div id="video-placeholder" class="video-placeholder">
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polygon points="23 7 16 12 23 17 23 7"></polygon>
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+            </svg>
+            <p>Enter a channel URL and press Play</p>
+          </div>
+        </div>
       </div>
-      <div id="clientclock">
-        <span id="localTimeMs"></span>
-        <span style="font-size: 8pt">Client Time</span>
-      </div>
-    </section>
-    <section id="stats">
-      <span id="stats-current-rtt"></span>
-      <span id="stats-incoming-bitrate"></span>
-      <span id="stats-packetloss"></span>
-    </section>
-    <footer>
-      <p>
-        By <a href="https://www.eyevinn.se">Eyevinn Technology AB</a> and it is
-        <a href="https://github.com/Eyevinn/webrtc-player">Open Source</a>
-      </p>
+    </div>
+
+    <footer class="app-footer">
+      <span
+        >By
+        <a href="https://www.eyevinn.se" target="_blank" rel="noopener"
+          >Eyevinn Technology AB</a
+        ></span
+      >
+      <span>&middot;</span>
+      <a
+        href="https://github.com/Eyevinn/webrtc-player"
+        target="_blank"
+        rel="noopener"
+        >Open source on GitHub</a
+      >
     </footer>
+
+    <div id="toast"></div>
   </body>
 </html>
