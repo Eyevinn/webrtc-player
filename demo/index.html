@@ -18,11 +18,18 @@
         --surface: #161616;
         --surface2: #1e1e1e;
         --border: #2b2b2b;
+        --border-hover: #3a3a3a;
+        --surface3: #252525;
+        --radius-sm: 6px;
         --text: #ebebeb;
         --text-muted: #606060;
+        --muted: #606060;
         --text-label: #a0a0a0;
+        --text-secondary: #a0a0a0;
         --blue: #4c9ff5;
+        --blue-dim: rgba(76, 159, 245, 0.12);
         --red: #e63946;
+        --red-glow: rgba(230, 57, 70, 0.25);
         --orange: #f4a261;
         --green: #4caf7d;
       }
@@ -65,18 +72,17 @@
         width: 1px;
         height: 20px;
         background: var(--border);
-        flex-shrink: 0;
       }
 
       .header-title {
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 600;
-        color: var(--text);
+        letter-spacing: 0.01em;
         flex: 1;
       }
 
       .status-pill {
-        display: flex;
+        display: inline-flex;
         align-items: center;
         gap: 6px;
         background: var(--surface2);
@@ -84,38 +90,44 @@
         border-radius: 100px;
         padding: 4px 10px;
         font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.77px;
+        font-weight: 600;
+        letter-spacing: 0.07em;
         text-transform: uppercase;
-        color: var(--text-muted);
+        color: var(--muted);
         user-select: none;
-        line-height: 1.5;
+        transition: all 0.25s;
       }
 
       .status-dot {
         width: 6px;
         height: 6px;
         border-radius: 50%;
-        background: var(--text-muted);
+        background: var(--muted);
         flex-shrink: 0;
+        transition: background 0.25s;
       }
 
       .status-pill.connecting {
         color: var(--orange);
+        border-color: rgba(244, 162, 97, 0.35);
+        background: rgba(244, 162, 97, 0.08);
       }
       .status-pill.connecting .status-dot {
         background: var(--orange);
-        animation: pulse 1.2s ease-in-out infinite;
+        animation: blink 0.9s ease-in-out infinite;
       }
       .status-pill.live {
-        color: var(--blue);
+        color: var(--red);
+        border-color: var(--red-glow);
+        background: rgba(230, 57, 70, 0.08);
       }
       .status-pill.live .status-dot {
-        background: var(--blue);
-        animation: pulse 1.2s ease-in-out infinite;
+        background: var(--red);
+        box-shadow: 0 0 5px var(--red);
+        animation: blink 1.6s ease-in-out infinite;
       }
 
-      @keyframes pulse {
+      @keyframes blink {
         0%,
         100% {
           opacity: 1;
@@ -126,7 +138,7 @@
       }
 
       .header-btn {
-        display: flex;
+        display: inline-flex;
         align-items: center;
         gap: 6px;
         background: transparent;
@@ -134,14 +146,16 @@
         border-radius: 6px;
         padding: 5px 10px;
         font-size: 12px;
+        font-family: inherit;
         font-weight: 500;
-        color: rgb(160, 160, 160);
+        color: var(--text-secondary);
         cursor: pointer;
-        transition: border-color 0.15s, color 0.15s;
+        transition: all 0.2s;
       }
       .header-btn:hover {
         border-color: var(--blue);
         color: var(--blue);
+        background: var(--blue-dim);
       }
 
       /* ── Body layout ── */
@@ -210,39 +224,47 @@
       }
 
       .btn {
-        display: flex;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
         gap: 7px;
         width: 100%;
         padding: 9px 14px;
         border-radius: 6px;
+        font-family: inherit;
         font-size: 12px;
         font-weight: 500;
         cursor: pointer;
-        border: none;
-        transition: opacity 0.15s;
+        border: 1px solid transparent;
+        transition: all 0.18s;
+        line-height: 1;
       }
-      .btn:hover {
-        opacity: 0.85;
-      }
-      .btn:active {
-        opacity: 0.7;
+      .btn svg {
+        flex-shrink: 0;
       }
       .btn-primary {
         background: var(--blue);
         color: #fff;
-        border: 1px solid var(--blue);
+        border-color: var(--blue);
+      }
+      .btn-primary:hover {
+        background: #6aadff;
+        border-color: #6aadff;
       }
       .btn-ghost {
         background: transparent;
         color: var(--text);
-        border: 1px solid var(--border);
+        border-color: var(--border);
+      }
+      .btn-ghost:hover {
+        border-color: var(--blue);
+        color: var(--blue);
+        background: var(--blue-dim);
       }
 
       .btn-row {
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
         gap: 6px;
       }
 
@@ -335,25 +357,63 @@
         align-items: center;
         justify-content: center;
         gap: 10px;
-        color: var(--text-muted);
-        font-size: 13px;
         pointer-events: none;
+        transition: opacity 0.3s;
+      }
+
+      .video-placeholder.hidden {
+        opacity: 0;
       }
 
       .video-placeholder svg {
-        opacity: 0.45;
+        opacity: 0.2;
+      }
+
+      .video-placeholder p {
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.5;
+        text-align: center;
+      }
+
+      .audio-controls {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+        pointer-events: all;
+      }
+      .audio-ctrl-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        cursor: pointer;
+        transition: all 0.18s;
+      }
+      .audio-ctrl-btn:hover {
+        border-color: var(--blue);
+        color: var(--blue);
+        background: var(--blue-dim);
+      }
+      .audio-ctrl-btn.muted {
+        color: var(--text-muted);
+        border-color: var(--border);
       }
 
       /* ── Footer ── */
       .app-footer {
         display: flex;
-        align-items: center;
         gap: 6px;
         padding: 8px 20px;
         background: var(--surface);
         border-top: 1px solid var(--border);
         font-size: 11px;
-        color: var(--text-muted);
+        color: var(--muted);
         flex-shrink: 0;
       }
       .app-footer a {
@@ -386,28 +446,158 @@
         position: fixed;
         bottom: 20px;
         right: 20px;
-        z-index: 1000;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        pointer-events: none;
-      }
-      .toast {
-        background: var(--surface2);
-        border: 1px solid var(--border);
-        border-radius: 8px;
+        background: var(--surface3);
+        border: 1px solid var(--border-hover);
+        border-radius: var(--radius-sm);
         padding: 10px 14px;
         font-size: 12px;
         color: var(--text);
-        pointer-events: all;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
         opacity: 0;
-        transform: translateY(8px);
-        transition: opacity 0.2s, transform 0.2s;
-        max-width: 280px;
+        transform: translateY(12px);
+        transition: opacity 0.22s ease, transform 0.22s ease;
+        pointer-events: none;
+        z-index: 999;
+        max-width: 480px;
+        word-break: break-word;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
       }
-      .toast.visible {
+      #toast.has-action {
+        position: fixed;
+        display: block;
+        padding-top: 32px;
+      }
+      .toast-content {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      #toast.visible {
         opacity: 1;
         transform: translateY(0);
+        pointer-events: auto;
+      }
+      .toast-msg {
+        display: block;
+        padding-right: 20px;
+        word-break: break-word;
+      }
+      .toast-action-btn {
+        padding: 3px 10px;
+        background: var(--blue-dim);
+        color: var(--blue);
+        border: 1px solid var(--blue);
+        border-radius: var(--radius-sm);
+        font-size: 11px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .toast-action-btn:hover {
+        background: var(--blue);
+        color: #fff;
+      }
+      .toast-close-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        padding: 2px 6px;
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-size: 14px;
+        line-height: 1;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .toast-close-btn:hover {
+        color: var(--text);
+        border-color: var(--border-hover);
+      }
+      .toast-buttons {
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      /* ── Resource / channel card styles ── */
+      .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+      .card-title {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        color: var(--text-muted);
+      }
+      .channel-display {
+        padding: 0.5rem;
+      }
+      .resource-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 14px;
+        transition: border-color 0.2s;
+      }
+      .resource-card:hover {
+        border-color: var(--border-hover);
+      }
+      .resource-card.selected {
+        border-color: var(--blue);
+        background: var(--surface3);
+      }
+      .resource-card-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
+      .live-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--red);
+        box-shadow: 0 0 5px var(--red);
+        animation: blink 1.6s ease-in-out infinite;
+        flex-shrink: 0;
+      }
+      .connecting-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--blue);
+        box-shadow: 0 0 5px var(--blue);
+        animation: blink 0.9s ease-in-out infinite;
+        flex-shrink: 0;
+      }
+      .resource-card.loading {
+        opacity: 0.6;
+        pointer-events: none;
+      }
+      .resource-url {
+        font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+        font-size: 11px;
+        color: var(--text-secondary);
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
+      }
+      .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 20px 10px;
+        color: var(--muted);
+        font-size: 12px;
       }
     </style>
   </head>
@@ -459,22 +649,6 @@
         </div>
 
         <div class="card">
-          <p class="card-label">Channel URL</p>
-          <div class="field">
-            <label class="field-label" for="channelUrl">URL</label>
-            <input
-              id="channelUrl"
-              type="text"
-              placeholder="https://&hellip;/channel"
-            />
-          </div>
-          <div class="btn-row">
-            <button id="play" class="btn btn-primary">&#9654; Play</button>
-            <button id="stop" class="btn btn-ghost">&#9632; Stop</button>
-          </div>
-        </div>
-
-        <div class="card">
           <p class="card-label">Options</p>
           <div class="field">
             <label class="checkbox-row">
@@ -484,11 +658,32 @@
           </div>
           <div class="field" id="prerollUrlField" style="display: none">
             <label class="field-label" for="prerollUrl">VMAP URL</label>
-            <input
-              id="prerollUrl"
-              type="text"
-              value="https://eyevinn.adtest.eyevinn.technology/api/v1/vmap?bp=0&amp;dur=10"
-            />
+            <input id="prerollUrl" type="text" placeholder="VMAP URL" />
+          </div>
+        </div>
+
+        <div class="card">
+          <p class="card-label">Channel URL</p>
+          <div class="field">
+            <label class="field-label" for="channelUrl">URL</label>
+            <input id="channelUrl" type="text" placeholder="Channel URL" />
+          </div>
+          <div class="btn-row">
+            <button id="play" class="btn btn-primary">
+              <svg
+                id="play-icon"
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              <span id="play-label">Play</span>
+            </button>
+            <button id="stop" class="btn btn-ghost">
+              <span style="line-height: 0">&#9632;</span><span>Stop</span>
+            </button>
           </div>
         </div>
 
@@ -507,15 +702,36 @@
           <p class="card-label">Client Time</p>
           <div class="stat-card"><span id="localTimeMs">&mdash;</span></div>
         </div>
+
+        <div class="card" id="channels-card">
+          <div class="card-header">
+            <span class="card-title">Active Channel</span>
+          </div>
+          <div
+            id="channel-display"
+            class="channel-display"
+            style="display: none"
+          >
+            <div class="resource-card selected" id="active-channel-card">
+              <div class="resource-card-header">
+                <span id="active-channel-dot" class="connecting-dot"></span>
+                <span class="resource-url" id="active-channel-label"></span>
+              </div>
+            </div>
+          </div>
+          <div id="channel-empty" class="empty-state" style="display: flex">
+            <span>No active channel</span>
+          </div>
+        </div>
       </aside>
 
       <div class="content">
         <div class="video-area">
-          <video autoplay muted playsinline></video>
+          <video autoplay playsinline></video>
           <div id="video-placeholder" class="video-placeholder">
             <svg
-              width="48"
-              height="48"
+              width="52"
+              height="52"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -527,6 +743,38 @@
               <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
             </svg>
             <p>Enter a channel URL and press Play</p>
+          </div>
+          <div
+            id="audio-placeholder"
+            class="video-placeholder"
+            style="display: none"
+          >
+            <svg
+              width="52"
+              height="52"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              stroke="none"
+            >
+              <path
+                d="M12 3C7.03 3 3 7.03 3 12v5a3 3 0 0 0 3 3h1a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-2a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h1a3 3 0 0 0 3-3v-5c0-4.97-4.03-9-9-9z"
+              />
+            </svg>
+            <p>Audio only</p>
+            <div class="audio-controls">
+              <button id="audio-mute-btn" class="audio-ctrl-btn" title="Mute">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path
+                    d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02z"
+                  />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>

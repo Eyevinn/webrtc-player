@@ -7,3 +7,5 @@ node_modules
 lerna-debug.log
 .vscode/settings.json
 .vscode/extensions.json
+.env.local
+demo/.env.local
