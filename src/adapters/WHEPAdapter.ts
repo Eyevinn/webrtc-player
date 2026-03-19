@@ -72,11 +72,11 @@ export class WHEPAdapter implements Adapter {
   async disconnect() {
     if (this.resource) {
       this.log(`Disconnecting by removing resource ${this.resource}`);
-      const headers: {Authorization?: string} = {};
+      const headers: { Authorization?: string } = {};
       this.authKey && (headers['Authorization'] = this.authKey);
       const response = await fetch(this.resource, {
         method: 'DELETE',
-        headers,
+        headers
       });
       if (response.ok) {
         this.log(`Successfully removed resource`);
@@ -198,7 +198,7 @@ export class WHEPAdapter implements Adapter {
   private async requestOffer() {
     if (this.whepType === WHEPType.Server) {
       this.log(`Requesting offer from: ${this.channelUrl}`);
-      const headers: {'Content-Type': string, Authorization?: string} = {
+      const headers: { 'Content-Type': string; Authorization?: string } = {
         'Content-Type': 'application/sdp'
       };
       this.authKey && (headers['Authorization'] = this.authKey);
@@ -230,7 +230,7 @@ export class WHEPAdapter implements Adapter {
     if (this.whepType === WHEPType.Server && this.resource) {
       const answer = this.localPeer.localDescription;
       if (answer) {
-        const headers: {'Content-Type': string, Authorization?: string} = {
+        const headers: { 'Content-Type': string; Authorization?: string } = {
           'Content-Type': 'application/sdp'
         };
         this.authKey && (headers['Authorization'] = this.authKey);
@@ -256,7 +256,7 @@ export class WHEPAdapter implements Adapter {
 
     if (this.whepType === WHEPType.Client && offer) {
       this.log(`Sending offer to ${this.channelUrl}`);
-      const headers: {'Content-Type': string, Authorization?: string} = {
+      const headers: { 'Content-Type': string; Authorization?: string } = {
         'Content-Type': 'application/sdp'
       };
       this.authKey && (headers['Authorization'] = this.authKey);

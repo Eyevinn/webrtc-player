@@ -49,9 +49,9 @@ const WHEPAdapterFactory: AdapterFactoryFunction = (
 };
 
 const adapters: AdapterMap = {
+  whep: WHEPAdapterFactory,
   'se.eyevinn.whpp': WHPPAdapterFactory,
-  'se.eyevinn.webrtc': EyevinnAdapterFactory,
-  whep: WHEPAdapterFactory
+  'se.eyevinn.webrtc': EyevinnAdapterFactory
 };
 
 export function AdapterFactory(

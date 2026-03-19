@@ -25,8 +25,9 @@
   },
   "scripts": {
     "dev": "parcel --target demo --dist-dir dist-demo --host 0.0.0.0 --port 2345 --no-cache",
-    "build": "parcel build --target main --target types",
+    "build": "parcel build --target main --target types && parcel build --target demo",
     "build:demo": "parcel build --target demo",
+    "start": "serve dist-demo -l $PORT",
     "postversion": "git push && git push --tags",
     "prepare": "husky install",
     "lint": "eslint .",
@@ -52,25 +53,29 @@
     "url": "git+https://github.com/Eyevinn/webrtc-player.git"
   },
   "devDependencies": {
+    "@commitlint/cli": "^17.4.2",
+    "@commitlint/config-conventional": "^17.4.2",
     "@parcel/packager-ts": "^2.8.3",
     "@parcel/transformer-typescript-types": "^2.8.3",
     "@types/events": "^3.0.0",
     "@types/node": "^17.0.33",
-    "parcel": "^2.8.3",
-    "prettier": "2.8.4",
-    "typescript": "^4.6.3",
-    "@commitlint/cli": "^17.4.2",
-    "@commitlint/config-conventional": "^17.4.2",
     "@typescript-eslint/eslint-plugin": "^5.51.0",
     "@typescript-eslint/parser": "^5.51.0",
     "eslint": "^8.33.0",
     "eslint-config-prettier": "^8.6.0",
     "eslint-plugin-prettier": "^4.2.1",
-    "husky": "^8.0.3"
+    "husky": "^8.0.3",
+    "parcel": "^2.8.3",
+    "prettier": "2.8.4",
+    "typescript": "^4.6.3"
+  },
+  "overrides": {
+    "minimatch": "^3.1.5"
   },
   "dependencies": {
     "@eyevinn/csai-manager": "^0.1.2",
     "@eyevinn/whpp-client": "^0.1.2",
-    "events": "^3.3.0"
+    "events": "^3.3.0",
+    "serve": "^14.2.6"
   }
 }

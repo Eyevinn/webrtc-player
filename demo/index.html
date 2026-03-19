@@ -1,105 +1,801 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Media Server independent WebRTC player</title>
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css"
-    />
+    <meta charset="utf-8" />
+    <title>WebRTC Player</title>
     <script type="module" src="./demo.ts"></script>
-    <style type="text/css">
-      #videocontainer {
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #0d0d0d;
+        --surface: #161616;
+        --surface2: #1e1e1e;
+        --border: #2b2b2b;
+        --border-hover: #3a3a3a;
+        --surface3: #252525;
+        --radius-sm: 6px;
+        --text: #ebebeb;
+        --text-muted: #606060;
+        --muted: #606060;
+        --text-label: #a0a0a0;
+        --text-secondary: #a0a0a0;
+        --blue: #4c9ff5;
+        --blue-dim: rgba(76, 159, 245, 0.12);
+        --red: #e63946;
+        --red-glow: rgba(230, 57, 70, 0.25);
+        --orange: #f4a261;
+        --green: #4caf7d;
+      }
+
+      html,
+      body {
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          sans-serif;
+        font-size: 14px;
+      }
+
+      body {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      /* ── Header ── */
+      .app-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        height: 52px;
+        padding: 0 20px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+      }
+
+      .header-logo img {
+        height: 28px;
+        display: block;
+      }
+
+      .header-divider {
+        width: 1px;
+        height: 20px;
+        background: var(--border);
+      }
+
+      .header-title {
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        flex: 1;
+      }
+
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 100px;
+        padding: 4px 10px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: var(--muted);
+        user-select: none;
+        transition: all 0.25s;
+      }
+
+      .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--muted);
+        flex-shrink: 0;
+        transition: background 0.25s;
+      }
+
+      .status-pill.connecting {
+        color: var(--orange);
+        border-color: rgba(244, 162, 97, 0.35);
+        background: rgba(244, 162, 97, 0.08);
+      }
+      .status-pill.connecting .status-dot {
+        background: var(--orange);
+        animation: blink 0.9s ease-in-out infinite;
+      }
+      .status-pill.live {
+        color: var(--red);
+        border-color: var(--red-glow);
+        background: rgba(230, 57, 70, 0.08);
+      }
+      .status-pill.live .status-dot {
+        background: var(--red);
+        box-shadow: 0 0 5px var(--red);
+        animation: blink 1.6s ease-in-out infinite;
+      }
+
+      @keyframes blink {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.3;
+        }
+      }
+
+      .header-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: transparent;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 5px 10px;
+        font-size: 12px;
+        font-family: inherit;
+        font-weight: 500;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .header-btn:hover {
+        border-color: var(--blue);
+        color: var(--blue);
+        background: var(--blue-dim);
+      }
+
+      /* ── Body layout ── */
+      .app-body {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        flex: 1;
+        overflow: hidden;
+      }
+
+      /* ── Sidebar ── */
+      .sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px;
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        overflow-y: auto;
+      }
+
+      .card {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px;
+      }
+
+      .card-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-bottom: 12px;
+      }
+
+      .field {
+        margin-bottom: 10px;
+      }
+      .field:last-child {
+        margin-bottom: 0;
+      }
+
+      .field-label {
+        display: block;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-label);
+        margin-bottom: 5px;
+      }
+
+      input[type='text'] {
         width: 100%;
-        max-width: 800px;
-        margin: 0 auto;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 7px 9px;
+        font-size: 12px;
+        color: var(--text);
+        outline: none;
+        transition: border-color 0.15s;
+      }
+      input[type='text']:focus {
+        border-color: var(--blue);
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        width: 100%;
+        padding: 9px 14px;
+        border-radius: 6px;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: all 0.18s;
+        line-height: 1;
+      }
+      .btn svg {
+        flex-shrink: 0;
+      }
+      .btn-primary {
+        background: var(--blue);
+        color: #fff;
+        border-color: var(--blue);
+      }
+      .btn-primary:hover {
+        background: #6aadff;
+        border-color: #6aadff;
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--text);
+        border-color: var(--border);
+      }
+      .btn-ghost:hover {
+        border-color: var(--blue);
+        color: var(--blue);
+        background: var(--blue-dim);
+      }
+
+      .btn-row {
+        display: flex;
+        flex-direction: row;
+        gap: 6px;
+      }
+
+      /* Adapter buttons */
+      #adapters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      #adapters button {
+        background: transparent;
+        border: 1px solid var(--border);
+        border-radius: 100px;
+        padding: 4px 12px;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text);
+        cursor: pointer;
+        transition: border-color 0.15s, color 0.15s;
+      }
+      #adapters button.active,
+      #adapters button:hover {
+        border-color: var(--blue);
+        color: var(--blue);
+      }
+
+      /* Checkbox row */
+      .checkbox-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: var(--text);
+        cursor: pointer;
+        user-select: none;
+      }
+      .checkbox-row input[type='checkbox'] {
+        width: 14px;
+        height: 14px;
+        accent-color: var(--blue);
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+
+      /* Stat cards */
+      .stat-card {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 6px 9px;
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-bottom: 6px;
+        font-variant-numeric: tabular-nums;
+      }
+      .stat-card:last-child {
+        margin-bottom: 0;
+      }
+      .stat-card.has-value {
+        color: var(--text);
+      }
+
+      /* ── Main content ── */
+      .content {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: var(--bg);
+      }
+
+      .video-area {
         position: relative;
+        flex: 1;
+        background: #000;
+        overflow: hidden;
       }
-      video {
+
+      .video-area video {
         width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
       }
-      input {
-        width: 70%;
+
+      .video-placeholder {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        pointer-events: none;
+        transition: opacity 0.3s;
       }
-      footer {
-        font-size: 0.8em;
+
+      .video-placeholder.hidden {
+        opacity: 0;
+      }
+
+      .video-placeholder svg {
+        opacity: 0.2;
+      }
+
+      .video-placeholder p {
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.5;
         text-align: center;
       }
-      #input {
-        display: none;
+
+      .audio-controls {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+        pointer-events: all;
       }
-      button {
-        margin: 4px;
+      .audio-ctrl-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        cursor: pointer;
+        transition: all 0.18s;
       }
-      #preroll {
-        width: 20px;
+      .audio-ctrl-btn:hover {
+        border-color: var(--blue);
+        color: var(--blue);
+        background: var(--blue-dim);
       }
-      #stats {
-        font-size: 0.6em;
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
+      .audio-ctrl-btn.muted {
+        color: var(--text-muted);
+        border-color: var(--border);
       }
-      #wallclock {
-        text-align: center;
-        display: grid;
+
+      /* ── Footer ── */
+      .app-footer {
+        display: flex;
+        gap: 6px;
+        padding: 8px 20px;
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        font-size: 11px;
+        color: var(--muted);
+        flex-shrink: 0;
       }
-      #clientclock {
-        text-align: center;
-        display: grid;
+      .app-footer a {
+        color: var(--blue);
+        text-decoration: none;
+      }
+      .app-footer a:hover {
+        text-decoration: underline;
+      }
+
+      /* ── Responsive ── */
+      @media (max-width: 760px) {
+        body {
+          overflow: auto;
+        }
+        .app-body {
+          grid-template-columns: 1fr;
+        }
+        .video-area {
+          min-height: 240px;
+        }
+        .sidebar {
+          border-right: none;
+          border-bottom: 1px solid var(--border);
+        }
+      }
+
+      /* Toast */
+      #toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: var(--surface3);
+        border: 1px solid var(--border-hover);
+        border-radius: var(--radius-sm);
+        padding: 10px 14px;
+        font-size: 12px;
+        color: var(--text);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        opacity: 0;
+        transform: translateY(12px);
+        transition: opacity 0.22s ease, transform 0.22s ease;
+        pointer-events: none;
+        z-index: 999;
+        max-width: 480px;
+        word-break: break-word;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+      }
+      #toast.has-action {
+        position: fixed;
+        display: block;
+        padding-top: 32px;
+      }
+      .toast-content {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      #toast.visible {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+      }
+      .toast-msg {
+        display: block;
+        padding-right: 20px;
+        word-break: break-word;
+      }
+      .toast-action-btn {
+        padding: 3px 10px;
+        background: var(--blue-dim);
+        color: var(--blue);
+        border: 1px solid var(--blue);
+        border-radius: var(--radius-sm);
+        font-size: 11px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .toast-action-btn:hover {
+        background: var(--blue);
+        color: #fff;
+      }
+      .toast-close-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        padding: 2px 6px;
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-size: 14px;
+        line-height: 1;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .toast-close-btn:hover {
+        color: var(--text);
+        border-color: var(--border-hover);
+      }
+      .toast-buttons {
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      /* ── Resource / channel card styles ── */
+      .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+      .card-title {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        color: var(--text-muted);
+      }
+      .channel-display {
+        padding: 0.5rem;
+      }
+      .resource-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 14px;
+        transition: border-color 0.2s;
+      }
+      .resource-card:hover {
+        border-color: var(--border-hover);
+      }
+      .resource-card.selected {
+        border-color: var(--blue);
+        background: var(--surface3);
+      }
+      .resource-card-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
+      .live-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--red);
+        box-shadow: 0 0 5px var(--red);
+        animation: blink 1.6s ease-in-out infinite;
+        flex-shrink: 0;
+      }
+      .connecting-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--blue);
+        box-shadow: 0 0 5px var(--blue);
+        animation: blink 0.9s ease-in-out infinite;
+        flex-shrink: 0;
+      }
+      .resource-card.loading {
+        opacity: 0.6;
+        pointer-events: none;
+      }
+      .resource-url {
+        font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+        font-size: 11px;
+        color: var(--text-secondary);
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
+      }
+      .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 20px 10px;
+        color: var(--muted);
+        font-size: 12px;
       }
     </style>
   </head>
   <body>
-    <header>
-      <h1>Media Server independent WebRTC player</h1>
-    </header>
-    <section>
-      <p>Available adapters:</p>
-      <div id="adapters"></div>
-      <div id="input">
-        <label for="channelUrl">URL</label>
-        <input id="channelUrl" type="text" value="" />
-        <button id="play">Play</button>
-        <button id="stop">Stop</button>
-        <input type="checkbox" id="preroll" />
-        <label for="preroll">Preroll</label>
-        <label for="prerollUrl">VMAP</label>
-        <input
-          id="prerollUrl"
-          type="text"
-          value="https://eyevinn.adtest.eyevinn.technology/api/v1/vmap?bp=0&dur=10"
-        />
+    <header class="app-header">
+      <div class="header-logo">
+        <picture>
+          <source
+            srcset="./logo-darkmode.png"
+            media="(prefers-color-scheme: dark)"
+          />
+          <img src="./logo-lightmode.png" alt="Eyevinn Technology" />
+        </picture>
       </div>
-      <div id="videocontainer">
-        <video autoplay muted controls playsinline></video>
+      <div class="header-divider"></div>
+      <span class="header-title">WebRTC Player</span>
+      <div id="status-pill" class="status-pill">
+        <span class="status-dot"></span>
+        <span id="status-label">Idle</span>
       </div>
-      <div id="wallclock">
-        <span id="Stockholm_z72a"></span>
-        <span style="font-size: 8pt" rel="nofollow"
-          >Atomic Wall clock provided by
-          <a href="https://time.is/" id="time_is_link">time.is</a></span
+      <button
+        id="share-btn"
+        class="header-btn"
+        title="Copy shareable URL to clipboard"
+      >
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
         >
-        <script src="//widget.time.is/t.js"></script>
-        <script>
-          time_is_widget.init({
-            Stockholm_z72a: {}
-          });
-        </script>
+          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+          <polyline points="16 6 12 2 8 6"></polyline>
+          <line x1="12" y1="2" x2="12" y2="15"></line>
+        </svg>
+        Share
+      </button>
+    </header>
+
+    <div class="app-body">
+      <aside class="sidebar">
+        <div class="card">
+          <p class="card-label">Adapter</p>
+          <div id="adapters"></div>
+        </div>
+
+        <div class="card">
+          <p class="card-label">Options</p>
+          <div class="field">
+            <label class="checkbox-row">
+              <input type="checkbox" id="preroll" />
+              <span>Preroll ad</span>
+            </label>
+          </div>
+          <div class="field" id="prerollUrlField" style="display: none">
+            <label class="field-label" for="prerollUrl">VMAP URL</label>
+            <input id="prerollUrl" type="text" placeholder="VMAP URL" />
+          </div>
+        </div>
+
+        <div class="card">
+          <p class="card-label">Channel URL</p>
+          <div class="field">
+            <label class="field-label" for="channelUrl">URL</label>
+            <input id="channelUrl" type="text" placeholder="Channel URL" />
+          </div>
+          <div class="btn-row">
+            <button id="play" class="btn btn-primary">
+              <svg
+                id="play-icon"
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              <span id="play-label">Play</span>
+            </button>
+            <button id="stop" class="btn btn-ghost">
+              <span style="line-height: 0">&#9632;</span><span>Stop</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <p class="card-label">Stats</p>
+          <div id="stats-current-rtt" class="stat-card">RTT: &mdash;</div>
+          <div id="stats-incoming-bitrate" class="stat-card">
+            Bitrate: &mdash;
+          </div>
+          <div id="stats-packetloss" class="stat-card">
+            Packets Lost: &mdash;
+          </div>
+        </div>
+
+        <div class="card">
+          <p class="card-label">Client Time</p>
+          <div class="stat-card"><span id="localTimeMs">&mdash;</span></div>
+        </div>
+
+        <div class="card" id="channels-card">
+          <div class="card-header">
+            <span class="card-title">Active Channel</span>
+          </div>
+          <div
+            id="channel-display"
+            class="channel-display"
+            style="display: none"
+          >
+            <div class="resource-card selected" id="active-channel-card">
+              <div class="resource-card-header">
+                <span id="active-channel-dot" class="connecting-dot"></span>
+                <span class="resource-url" id="active-channel-label"></span>
+              </div>
+            </div>
+          </div>
+          <div id="channel-empty" class="empty-state" style="display: flex">
+            <span>No active channel</span>
+          </div>
+        </div>
+      </aside>
+
+      <div class="content">
+        <div class="video-area">
+          <video autoplay playsinline></video>
+          <div id="video-placeholder" class="video-placeholder">
+            <svg
+              width="52"
+              height="52"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polygon points="23 7 16 12 23 17 23 7"></polygon>
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+            </svg>
+            <p>Enter a channel URL and press Play</p>
+          </div>
+          <div
+            id="audio-placeholder"
+            class="video-placeholder"
+            style="display: none"
+          >
+            <svg
+              width="52"
+              height="52"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              stroke="none"
+            >
+              <path
+                d="M12 3C7.03 3 3 7.03 3 12v5a3 3 0 0 0 3 3h1a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-2a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h1a3 3 0 0 0 3-3v-5c0-4.97-4.03-9-9-9z"
+              />
+            </svg>
+            <p>Audio only</p>
+            <div class="audio-controls">
+              <button id="audio-mute-btn" class="audio-ctrl-btn" title="Mute">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path
+                    d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02z"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-      <div id="clientclock">
-        <span id="localTimeMs"></span>
-        <span style="font-size: 8pt">Client Time</span>
-      </div>
-    </section>
-    <section id="stats">
-      <span id="stats-current-rtt"></span>
-      <span id="stats-incoming-bitrate"></span>
-      <span id="stats-packetloss"></span>
-    </section>
-    <footer>
-      <p>
-        By <a href="https://www.eyevinn.se">Eyevinn Technology AB</a> and it is
-        <a href="https://github.com/Eyevinn/webrtc-player">Open Source</a>
-      </p>
+    </div>
+
+    <footer class="app-footer">
+      <span
+        >By
+        <a href="https://www.eyevinn.se" target="_blank" rel="noopener"
+          >Eyevinn Technology AB</a
+        ></span
+      >
+      <span>&middot;</span>
+      <a
+        href="https://github.com/Eyevinn/webrtc-player"
+        target="_blank"
+        rel="noopener"
+        >Open source on GitHub</a
+      >
     </footer>
+
+    <div id="toast"></div>
   </body>
 </html>
