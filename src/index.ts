@@ -40,6 +40,7 @@ interface WebRTCPlayerOptions {
   detectTimeout?: boolean;
   timeoutThreshold?: number;
   mediaConstraints?: MediaConstraints;
+  rtcConfiguration?: RTCConfiguration;
 }
 
 const RECONNECT_ATTEMPTS = 2;
@@ -64,6 +65,7 @@ export class WebRTCPlayer extends EventEmitter {
   private timeoutThresholdCounter = 0;
   private bytesReceived = 0;
   private mediaConstraints: MediaConstraints;
+  private rtcConfiguration?: RTCConfiguration;
 
   constructor(opts: WebRTCPlayerOptions) {
     super();
@@ -83,6 +85,7 @@ export class WebRTCPlayer extends EventEmitter {
       this.iceServers = opts.iceServers;
     }
     this.debug = !!opts.debug;
+    this.rtcConfiguration = opts.rtcConfiguration;
     if (opts.vmapUrl) {
       this.csaiManager = new CSAIManager({
         contentVideoElement: this.videoElement,
@@ -208,7 +211,7 @@ export class WebRTCPlayer extends EventEmitter {
   }
 
   private setupPeer() {
-    this.peer = new RTCPeerConnection({ iceServers: this.iceServers });
+    this.peer = new RTCPeerConnection({ iceServers: this.iceServers, ...this.rtcConfiguration });
     this.peer.onconnectionstatechange = this.onConnectionStateChange.bind(this);
     this.peer.ontrack = this.onTrack.bind(this);
   }
