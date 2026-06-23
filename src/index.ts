@@ -14,6 +14,7 @@ enum Message {
   PEER_CONNECTION_FAILED = 'peer-connection-failed',
   PEER_CONNECTION_CONNECTED = 'peer-connection-connected',
   INITIAL_CONNECTION_FAILED = 'initial-connection-failed',
+  RECONNECTION_FAILED = 'reconnection-failed',
   CONNECT_ERROR = 'connect-error',
   PLAYER_MUTED = 'player-muted',
   PLAYER_UNMUTED = 'player-unmuted'
@@ -36,13 +37,15 @@ interface WebRTCPlayerOptions {
   iceServers?: RTCIceServer[];
   debug?: boolean;
   vmapUrl?: string;
+  reconnectAttemptsLeft?: number;
   statsTypeFilter?: string; // regexp
   detectTimeout?: boolean;
   timeoutThreshold?: number;
   mediaConstraints?: MediaConstraints;
 }
 
-const RECONNECT_ATTEMPTS = 2;
+const RECONNECT_ATTEMPTS = 5; // number of times to attempt reconnecting before giving up and emitting a reconnection failed event, can be configured with WebRTCPlayerOptions.reconnectAttemptsLeft
+const MEDIA_TIMEOUT_THRESHOLD = 15000; //15 seconds without media is considered a timeout, can be configured with WebRTCPlayerOptions.timeoutThreshold
 
 export class WebRTCPlayer extends EventEmitter {
   private videoElement: HTMLVideoElement;
@@ -53,6 +56,7 @@ export class WebRTCPlayer extends EventEmitter {
   private debug: boolean;
   private channelUrl: URL = <URL>{};
   private authKey?: string = undefined;
+  private configuredReconnectAttempts: number = RECONNECT_ATTEMPTS;
   private reconnectAttemptsLeft: number = RECONNECT_ATTEMPTS;
   private csaiManager?: CSAIManager;
   private adapter: Adapter = <Adapter>{};
@@ -60,7 +64,7 @@ export class WebRTCPlayer extends EventEmitter {
   private statsTypeFilter: string | undefined = undefined;
   private msStatsInterval = 5000;
   private mediaTimeoutOccured = false;
-  private mediaTimeoutThreshold = 30000;
+  private mediaTimeoutThreshold = MEDIA_TIMEOUT_THRESHOLD;
   private timeoutThresholdCounter = 0;
   private bytesReceived = 0;
   private mediaConstraints: MediaConstraints;
@@ -72,6 +76,11 @@ export class WebRTCPlayer extends EventEmitter {
       ...opts.mediaConstraints
     };
     this.videoElement = opts.video;
+    this.configuredReconnectAttempts =
+      opts.reconnectAttemptsLeft ?? RECONNECT_ATTEMPTS;
+    this.reconnectAttemptsLeft = this.configuredReconnectAttempts;
+    this.mediaTimeoutThreshold =
+      opts.timeoutThreshold ?? MEDIA_TIMEOUT_THRESHOLD;
     this.adapterType = opts.type;
     this.adapterFactory = opts.adapterFactory;
     this.statsTypeFilter = opts.statsTypeFilter;
@@ -129,6 +138,7 @@ export class WebRTCPlayer extends EventEmitter {
       this.peer && this.peer.close();
 
       if (this.reconnectAttemptsLeft <= 0) {
+        this.emit(Message.RECONNECTION_FAILED);
         this.error('Connection failed, reconnecting failed');
         return;
       }
@@ -141,6 +151,7 @@ export class WebRTCPlayer extends EventEmitter {
     } else if (this.peer.connectionState === 'connected') {
       this.log('Connected');
       this.emit(Message.PEER_CONNECTION_CONNECTED);
+      this.reconnectAttemptsLeft = this.configuredReconnectAttempts;
       this.reconnectAttemptsLeft = RECONNECT_ATTEMPTS;
     }
   }
