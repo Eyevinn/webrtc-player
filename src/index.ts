@@ -7,6 +7,7 @@ import { EventEmitter } from 'events';
 import { CSAIManager } from '@eyevinn/csai-manager';
 
 export { ListAvailableAdapters } from './adapters/AdapterFactory';
+export type { Adapter, AdapterConnectOptions } from './adapters/Adapter';
 
 enum Message {
   NO_MEDIA = 'no-media',
