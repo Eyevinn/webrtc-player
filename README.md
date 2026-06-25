@@ -98,8 +98,12 @@ Compatible with WebRTC media servers in [Eyevinn WHIP](https://github.com/Eyevin
 
 To provide a custom adapter, implement the interface `Adapter`.
 
-```javascript
-import { WebRTCPlayer, Adapter } from "@eyevinn/webrtc-player";
+```ts
+import {
+  WebRTCPlayer,
+  Adapter,
+  AdapterConnectOptions
+} from '@eyevinn/webrtc-player';
 
 class CustomAdapter implements Adapter {
   private debug: boolean;
@@ -118,19 +122,26 @@ class CustomAdapter implements Adapter {
   }
 
   // Should return the RTCPeerConnection owned by this Adapter
-  getPeer() : RTCPeerConnection {
+  getPeer(): RTCPeerConnection {
     return this.localPeer;
   }
 
-  // Implement the Adapter signalling here, starting the SDP negotiation flow.
-  connect(opts?: AdapterConnectOptions) {
+  // Called on reconnect to swap in a freshly created peer connection
+  resetPeer(newPeer: RTCPeerConnection) {
+    this.localPeer = newPeer;
   }
+
+  // Implement the Adapter signalling here, starting the SDP negotiation flow.
+  async connect(opts?: AdapterConnectOptions) {}
+
+  // Tear down the connection and release any resources
+  async disconnect() {}
 }
 ```
 
 Then provide a factory function that will create a new instance of your adapter.
 
-```javascript
+```ts
 const video = document.querySelector('video');
 const player = new WebRTCPlayer({
   video: video,

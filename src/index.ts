@@ -7,6 +7,7 @@ import { EventEmitter } from 'events';
 import { CSAIManager } from '@eyevinn/csai-manager';
 
 export { ListAvailableAdapters } from './adapters/AdapterFactory';
+export type { Adapter, AdapterConnectOptions } from './adapters/Adapter';
 
 enum Message {
   NO_MEDIA = 'no-media',
@@ -222,7 +223,10 @@ export class WebRTCPlayer extends EventEmitter {
   }
 
   private setupPeer() {
-    this.peer = new RTCPeerConnection({ iceServers: this.iceServers, ...this.rtcConfiguration });
+    this.peer = new RTCPeerConnection({
+      iceServers: this.iceServers,
+      ...this.rtcConfiguration
+    });
     this.peer.onconnectionstatechange = this.onConnectionStateChange.bind(this);
     this.peer.ontrack = this.onTrack.bind(this);
   }
