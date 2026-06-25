@@ -5,10 +5,34 @@
   "homepage": "https://webcast.eyevinn.technology",
   "bugs": "https://github.com/Eyevinn/webrtc-player/issues",
   "source": "src/index.ts",
+  "type": "commonjs",
   "main": "dist/main.js",
+  "module": "dist/module.mjs",
   "types": "dist/types.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/types.d.mts",
+        "default": "./dist/module.mjs"
+      },
+      "require": {
+        "types": "./dist/types.d.ts",
+        "default": "./dist/main.js"
+      }
+    }
+  },
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
   "targets": {
     "main": {
+      "distDir": "./dist",
+      "engines": {
+        "browsers": "> 0.5%, last 2 versions, not dead"
+      }
+    },
+    "module": {
       "distDir": "./dist",
       "engines": {
         "browsers": "> 0.5%, last 2 versions, not dead"
@@ -25,7 +49,7 @@
   },
   "scripts": {
     "dev": "parcel --target demo --dist-dir dist-demo --host 0.0.0.0 --port 2345 --no-cache",
-    "build": "parcel build --target main --target types && parcel build --target demo",
+    "build": "parcel build --target main --target module --target types && cp dist/types.d.ts dist/types.d.mts && parcel build --target demo",
     "build:demo": "parcel build --target demo",
     "start": "serve dist-demo -l $PORT",
     "postversion": "git push && git push --tags",
