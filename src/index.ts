@@ -425,7 +425,13 @@ export class WebRTCPlayer extends EventEmitter {
   stop() {
     clearInterval(this.statsInterval);
     this.stopVideoHealthMonitor();
-    this.peer.close();
+    // Closing the peer connection flips its signalingState to 'closed', which
+    // the adapter observes to short-circuit any in-flight SDP exchange started
+    // before the connection was established (see WHEPAdapter). Guard against a
+    // peer that was never set up (e.g. stop()/destroy() called before load()).
+    if (typeof this.peer.close === 'function') {
+      this.peer.close();
+    }
     this.videoElement.srcObject = null;
     this.videoElement.load();
   }
