@@ -73,6 +73,10 @@ interface WebRTCPlayerOptions {
   statsCollectionIntervalMs?: number;
   numAudioTracks?: number;
   numVideoTracks?: number;
+  // Bearer token injected as `Authorization: Bearer <token>` on the WHEP SDP
+  // POST (offer) and DELETE (teardown) signaling requests. The token is never
+  // logged. Usable independently of the `authKey` passed to `load()`.
+  authToken?: string;
 }
 
 const RECONNECT_ATTEMPTS = 5; // number of times to attempt reconnecting before giving up and emitting a reconnection failed event, can be configured with WebRTCPlayerOptions.reconnectAttemptsLeft
@@ -118,6 +122,7 @@ export class WebRTCPlayer extends EventEmitter {
   private statsCollectionIntervalMs = STATS_COLLECTION_INTERVAL;
   private statsCollector?: StatsCollector;
   private availableTracks: AvailableTrack[] = [];
+  private authToken?: string = undefined;
 
   constructor(opts: WebRTCPlayerOptions) {
     super();
@@ -164,6 +169,7 @@ export class WebRTCPlayer extends EventEmitter {
     this.statsCollectionEnabled = opts.statsCollection ?? false;
     this.statsCollectionIntervalMs =
       opts.statsCollectionIntervalMs ?? STATS_COLLECTION_INTERVAL;
+    this.authToken = opts.authToken;
     if (opts.vmapUrl) {
       this.csaiManager = new CSAIManager({
         contentVideoElement: this.videoElement,
@@ -551,7 +557,8 @@ export class WebRTCPlayer extends EventEmitter {
         this.channelUrl,
         this.onErrorHandler.bind(this),
         this.mediaConstraints,
-        this.authKey
+        this.authKey,
+        { authToken: this.authToken }
       );
     } else if (this.adapterFactory) {
       this.adapter = this.adapterFactory(
@@ -559,7 +566,8 @@ export class WebRTCPlayer extends EventEmitter {
         this.channelUrl,
         this.onErrorHandler.bind(this),
         this.mediaConstraints,
-        this.authKey
+        this.authKey,
+        { authToken: this.authToken }
       );
     }
     if (!this.adapter) {
