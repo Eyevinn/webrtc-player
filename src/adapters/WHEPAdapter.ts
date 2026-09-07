@@ -110,10 +110,27 @@ export class WHEPAdapter implements Adapter {
     }
 
     if (this.localPeer && this.whepType === WHEPType.Client) {
-      if (this.video)
-        this.localPeer.addTransceiver('video', { direction: 'recvonly' });
-      if (this.audio)
-        this.localPeer.addTransceiver('audio', { direction: 'recvonly' });
+      // Add N recvonly transceivers of each type BEFORE creating the offer so
+      // the server can answer with multiple audio/video m-sections. Counts
+      // default to a single track each for backward compatibility.
+      const numVideoTracks = Math.max(
+        1,
+        this.mediaConstraints.numVideoTracks ?? 1
+      );
+      const numAudioTracks = Math.max(
+        1,
+        this.mediaConstraints.numAudioTracks ?? 1
+      );
+      if (this.video) {
+        for (let i = 0; i < numVideoTracks; i++) {
+          this.localPeer.addTransceiver('video', { direction: 'recvonly' });
+        }
+      }
+      if (this.audio) {
+        for (let i = 0; i < numAudioTracks; i++) {
+          this.localPeer.addTransceiver('audio', { direction: 'recvonly' });
+        }
+      }
       const offer = await this.localPeer.createOffer();
 
       // Teardown may have happened while awaiting the offer; bail out before
