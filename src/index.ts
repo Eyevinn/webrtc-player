@@ -17,7 +17,8 @@ enum Message {
   RECONNECTION_FAILED = 'reconnection-failed',
   CONNECT_ERROR = 'connect-error',
   PLAYER_MUTED = 'player-muted',
-  PLAYER_UNMUTED = 'player-unmuted'
+  PLAYER_UNMUTED = 'player-unmuted',
+  VIDEO_RECOVERY_ATTEMPT = 'video-recovery-attempt'
 }
 
 export interface MediaConstraints {
@@ -43,10 +44,15 @@ interface WebRTCPlayerOptions {
   timeoutThreshold?: number;
   mediaConstraints?: MediaConstraints;
   rtcConfiguration?: RTCConfiguration;
+  videoHealthMonitor?: boolean;
+  videoHealthPollIntervalMs?: number;
+  videoFreezeThresholdMs?: number;
 }
 
 const RECONNECT_ATTEMPTS = 5; // number of times to attempt reconnecting before giving up and emitting a reconnection failed event, can be configured with WebRTCPlayerOptions.reconnectAttemptsLeft
 const MEDIA_TIMEOUT_THRESHOLD = 15000; //15 seconds without media is considered a timeout, can be configured with WebRTCPlayerOptions.timeoutThreshold
+const VIDEO_HEALTH_POLL_INTERVAL = 1000; // how often to poll getStats() for video freeze detection, can be configured with WebRTCPlayerOptions.videoHealthPollIntervalMs
+const VIDEO_FREEZE_THRESHOLD = 3000; // how long the decoder can be stalled while packets keep arriving before we force a decoder recovery, can be configured with WebRTCPlayerOptions.videoFreezeThresholdMs
 
 export class WebRTCPlayer extends EventEmitter {
   private videoElement: HTMLVideoElement;
@@ -70,6 +76,13 @@ export class WebRTCPlayer extends EventEmitter {
   private bytesReceived = 0;
   private mediaConstraints: MediaConstraints;
   private rtcConfiguration?: RTCConfiguration;
+  private videoHealthMonitorEnabled: boolean;
+  private videoHealthPollIntervalMs = VIDEO_HEALTH_POLL_INTERVAL;
+  private videoFreezeThresholdMs = VIDEO_FREEZE_THRESHOLD;
+  private videoHealthInterval: ReturnType<typeof setInterval> | undefined;
+  private lastFramesDecoded = 0;
+  private lastVideoPacketsReceived = 0;
+  private videoFreezeElapsedMs = 0;
 
   constructor(opts: WebRTCPlayerOptions) {
     super();
@@ -95,6 +108,11 @@ export class WebRTCPlayer extends EventEmitter {
     }
     this.debug = !!opts.debug;
     this.rtcConfiguration = opts.rtcConfiguration;
+    this.videoHealthMonitorEnabled = opts.videoHealthMonitor ?? false;
+    this.videoHealthPollIntervalMs =
+      opts.videoHealthPollIntervalMs ?? VIDEO_HEALTH_POLL_INTERVAL;
+    this.videoFreezeThresholdMs =
+      opts.videoFreezeThresholdMs ?? VIDEO_FREEZE_THRESHOLD;
     if (opts.vmapUrl) {
       this.csaiManager = new CSAIManager({
         contentVideoElement: this.videoElement,
@@ -222,7 +240,10 @@ export class WebRTCPlayer extends EventEmitter {
   }
 
   private setupPeer() {
-    this.peer = new RTCPeerConnection({ iceServers: this.iceServers, ...this.rtcConfiguration });
+    this.peer = new RTCPeerConnection({
+      iceServers: this.iceServers,
+      ...this.rtcConfiguration
+    });
     this.peer.onconnectionstatechange = this.onConnectionStateChange.bind(this);
     this.peer.ontrack = this.onTrack.bind(this);
   }
@@ -250,6 +271,100 @@ export class WebRTCPlayer extends EventEmitter {
       for (const track of stream.getTracks()) {
         (this.videoElement.srcObject as MediaStream).addTrack(track);
       }
+    }
+
+    if (
+      this.videoHealthMonitorEnabled &&
+      event.track.kind === 'video' &&
+      !this.videoHealthInterval
+    ) {
+      this.startVideoHealthMonitor();
+    }
+  }
+
+  private startVideoHealthMonitor() {
+    this.log('Starting video health monitor');
+    this.lastFramesDecoded = 0;
+    this.lastVideoPacketsReceived = 0;
+    this.videoFreezeElapsedMs = 0;
+    this.videoHealthInterval = setInterval(
+      this.onVideoHealthCheck.bind(this),
+      this.videoHealthPollIntervalMs
+    );
+  }
+
+  private stopVideoHealthMonitor() {
+    if (this.videoHealthInterval) {
+      clearInterval(this.videoHealthInterval);
+      this.videoHealthInterval = undefined;
+    }
+  }
+
+  private async onVideoHealthCheck() {
+    if (!this.peer || typeof this.peer.getStats !== 'function') {
+      return;
+    }
+
+    // Don't flag a freeze when the caller has legitimately paused the video.
+    if (this.videoElement.paused) {
+      this.videoFreezeElapsedMs = 0;
+      return;
+    }
+
+    let framesDecoded: number | undefined;
+    let packetsReceived: number | undefined;
+    const stats = await this.peer.getStats(null);
+    stats.forEach((report) => {
+      if (report.type === 'inbound-rtp' && report.kind === 'video') {
+        if (typeof report.framesDecoded === 'number') {
+          framesDecoded = report.framesDecoded;
+        }
+        if (typeof report.packetsReceived === 'number') {
+          packetsReceived = report.packetsReceived;
+        }
+      }
+    });
+
+    if (framesDecoded === undefined || packetsReceived === undefined) {
+      return;
+    }
+
+    const framesAdvanced = framesDecoded > this.lastFramesDecoded;
+    const packetsFlowing = packetsReceived > this.lastVideoPacketsReceived;
+    this.lastFramesDecoded = framesDecoded;
+    this.lastVideoPacketsReceived = packetsReceived;
+
+    // A freeze is only a decoder problem worth recovering from when frames are
+    // not advancing *despite* packets still arriving. If packets have also
+    // stalled this is a network issue handled by the media-timeout logic, and
+    // legitimately paused/muted playback is filtered out above.
+    if (!framesAdvanced && packetsFlowing) {
+      this.videoFreezeElapsedMs += this.videoHealthPollIntervalMs;
+      if (this.videoFreezeElapsedMs >= this.videoFreezeThresholdMs) {
+        this.recoverVideo();
+        this.videoFreezeElapsedMs = 0;
+      }
+    } else {
+      this.videoFreezeElapsedMs = 0;
+    }
+  }
+
+  private recoverVideo() {
+    const currentStream = this.videoElement.srcObject as MediaStream | null;
+    if (!currentStream) {
+      return;
+    }
+    this.log('Video appears frozen, attempting decoder recovery');
+    this.emit(Message.VIDEO_RECOVERY_ATTEMPT);
+
+    // Re-create the MediaStream from the existing tracks. Re-attaching the
+    // tracks forces the decoder to reset and prompts a PLI/keyframe request.
+    const tracks = currentStream.getTracks();
+    const recovered = new MediaStream(tracks);
+    this.videoElement.srcObject = recovered;
+    const playPromise = this.videoElement.play();
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch((err) => this.log('Recovery play() rejected', err));
     }
   }
 
@@ -309,6 +424,7 @@ export class WebRTCPlayer extends EventEmitter {
 
   stop() {
     clearInterval(this.statsInterval);
+    this.stopVideoHealthMonitor();
     this.peer.close();
     this.videoElement.srcObject = null;
     this.videoElement.load();
