@@ -5,8 +5,15 @@ import {
 } from './adapters/AdapterFactory';
 import { EventEmitter } from 'events';
 import { CSAIManager } from '@eyevinn/csai-manager';
+import { StatsCollector, WebRTCStats } from './StatsCollector';
 
 export { ListAvailableAdapters } from './adapters/AdapterFactory';
+export type {
+  WebRTCStats,
+  VideoTrackStats,
+  MediaTrackStats,
+  IceCandidateType
+} from './StatsCollector';
 
 enum Message {
   NO_MEDIA = 'no-media',
@@ -19,7 +26,8 @@ enum Message {
   PLAYER_MUTED = 'player-muted',
   PLAYER_UNMUTED = 'player-unmuted',
   VIDEO_RECOVERY_ATTEMPT = 'video-recovery-attempt',
-  NETWORK_ONLINE_RECONNECT = 'network-online-reconnect'
+  NETWORK_ONLINE_RECONNECT = 'network-online-reconnect',
+  STATS = 'stats'
 }
 
 export interface MediaConstraints {
@@ -50,6 +58,8 @@ interface WebRTCPlayerOptions {
   videoFreezeThresholdMs?: number;
   reconnectOnOnline?: boolean;
   iceGatheringTimeoutMs?: number;
+  statsCollection?: boolean;
+  statsCollectionIntervalMs?: number;
 }
 
 const RECONNECT_ATTEMPTS = 5; // number of times to attempt reconnecting before giving up and emitting a reconnection failed event, can be configured with WebRTCPlayerOptions.reconnectAttemptsLeft
@@ -57,6 +67,7 @@ const MEDIA_TIMEOUT_THRESHOLD = 15000; //15 seconds without media is considered 
 const VIDEO_HEALTH_POLL_INTERVAL = 1000; // how often to poll getStats() for video freeze detection, can be configured with WebRTCPlayerOptions.videoHealthPollIntervalMs
 const VIDEO_FREEZE_THRESHOLD = 3000; // how long the decoder can be stalled while packets keep arriving before we force a decoder recovery, can be configured with WebRTCPlayerOptions.videoFreezeThresholdMs
 const ICE_GATHERING_TIMEOUT = 2000; // how long to wait for ICE candidate gathering before sending the offer with whatever was gathered, can be configured with WebRTCPlayerOptions.iceGatheringTimeoutMs
+const STATS_COLLECTION_INTERVAL = 1000; // how often to sample getStats() for the derived per-second 'stats' event, can be configured with WebRTCPlayerOptions.statsCollectionIntervalMs
 
 export class WebRTCPlayer extends EventEmitter {
   private videoElement: HTMLVideoElement;
@@ -90,6 +101,9 @@ export class WebRTCPlayer extends EventEmitter {
   private reconnectOnOnline: boolean;
   private onlineListener: (() => void) | undefined;
   private iceGatheringTimeoutMs = ICE_GATHERING_TIMEOUT;
+  private statsCollectionEnabled: boolean;
+  private statsCollectionIntervalMs = STATS_COLLECTION_INTERVAL;
+  private statsCollector?: StatsCollector;
 
   constructor(opts: WebRTCPlayerOptions) {
     super();
@@ -127,6 +141,9 @@ export class WebRTCPlayer extends EventEmitter {
     }
     this.iceGatheringTimeoutMs =
       opts.iceGatheringTimeoutMs ?? ICE_GATHERING_TIMEOUT;
+    this.statsCollectionEnabled = opts.statsCollection ?? false;
+    this.statsCollectionIntervalMs =
+      opts.statsCollectionIntervalMs ?? STATS_COLLECTION_INTERVAL;
     if (opts.vmapUrl) {
       this.csaiManager = new CSAIManager({
         contentVideoElement: this.videoElement,
@@ -272,6 +289,25 @@ export class WebRTCPlayer extends EventEmitter {
           this.mediaTimeoutOccured = false;
         }
       }
+    }
+  }
+
+  private startStatsCollection() {
+    // A fresh collector per peer connection so cumulative-counter deltas never
+    // span two different sessions.
+    this.stopStatsCollection();
+    this.statsCollector = new StatsCollector(
+      () => this.peer.getStats(null),
+      this.statsCollectionIntervalMs,
+      (stats: WebRTCStats) => this.emit(Message.STATS, stats)
+    );
+    this.statsCollector.start();
+  }
+
+  private stopStatsCollection() {
+    if (this.statsCollector) {
+      this.statsCollector.stop();
+      this.statsCollector = undefined;
     }
   }
 
@@ -437,6 +473,11 @@ export class WebRTCPlayer extends EventEmitter {
       this.onConnectionStats.bind(this),
       this.msStatsInterval
     );
+
+    if (this.statsCollectionEnabled) {
+      this.startStatsCollection();
+    }
+
     try {
       await this.adapter.connect({ timeout: this.iceGatheringTimeoutMs });
     } catch (error) {
@@ -461,6 +502,7 @@ export class WebRTCPlayer extends EventEmitter {
   stop() {
     clearInterval(this.statsInterval);
     this.stopVideoHealthMonitor();
+    this.stopStatsCollection();
     // Closing the peer connection flips its signalingState to 'closed', which
     // the adapter observes to short-circuit any in-flight SDP exchange started
     // before the connection was established (see WHEPAdapter). Guard against a
