@@ -49,12 +49,14 @@ interface WebRTCPlayerOptions {
   videoHealthPollIntervalMs?: number;
   videoFreezeThresholdMs?: number;
   reconnectOnOnline?: boolean;
+  iceGatheringTimeoutMs?: number;
 }
 
 const RECONNECT_ATTEMPTS = 5; // number of times to attempt reconnecting before giving up and emitting a reconnection failed event, can be configured with WebRTCPlayerOptions.reconnectAttemptsLeft
 const MEDIA_TIMEOUT_THRESHOLD = 15000; //15 seconds without media is considered a timeout, can be configured with WebRTCPlayerOptions.timeoutThreshold
 const VIDEO_HEALTH_POLL_INTERVAL = 1000; // how often to poll getStats() for video freeze detection, can be configured with WebRTCPlayerOptions.videoHealthPollIntervalMs
 const VIDEO_FREEZE_THRESHOLD = 3000; // how long the decoder can be stalled while packets keep arriving before we force a decoder recovery, can be configured with WebRTCPlayerOptions.videoFreezeThresholdMs
+const ICE_GATHERING_TIMEOUT = 2000; // how long to wait for ICE candidate gathering before sending the offer with whatever was gathered, can be configured with WebRTCPlayerOptions.iceGatheringTimeoutMs
 
 export class WebRTCPlayer extends EventEmitter {
   private videoElement: HTMLVideoElement;
@@ -87,6 +89,7 @@ export class WebRTCPlayer extends EventEmitter {
   private videoFreezeElapsedMs = 0;
   private reconnectOnOnline: boolean;
   private onlineListener: (() => void) | undefined;
+  private iceGatheringTimeoutMs = ICE_GATHERING_TIMEOUT;
 
   constructor(opts: WebRTCPlayerOptions) {
     super();
@@ -122,6 +125,8 @@ export class WebRTCPlayer extends EventEmitter {
       this.onlineListener = this.onNetworkOnline.bind(this);
       window.addEventListener('online', this.onlineListener);
     }
+    this.iceGatheringTimeoutMs =
+      opts.iceGatheringTimeoutMs ?? ICE_GATHERING_TIMEOUT;
     if (opts.vmapUrl) {
       this.csaiManager = new CSAIManager({
         contentVideoElement: this.videoElement,
@@ -216,7 +221,7 @@ export class WebRTCPlayer extends EventEmitter {
         this.videoElement.srcObject = null;
         this.setupPeer();
         this.adapter.resetPeer(this.peer);
-        this.adapter.connect();
+        this.adapter.connect({ timeout: this.iceGatheringTimeoutMs });
         break;
       case 'connectionfailed':
         this.peer && this.peer.close();
@@ -433,7 +438,7 @@ export class WebRTCPlayer extends EventEmitter {
       this.msStatsInterval
     );
     try {
-      await this.adapter.connect();
+      await this.adapter.connect({ timeout: this.iceGatheringTimeoutMs });
     } catch (error) {
       console.error(error);
       this.stop();
