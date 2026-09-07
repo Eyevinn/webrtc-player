@@ -77,6 +77,11 @@ interface WebRTCPlayerOptions {
   // POST (offer) and DELETE (teardown) signaling requests. The token is never
   // logged. Usable independently of the `authKey` passed to `load()`.
   authToken?: string;
+  // Routes the WHEP SDP POST (offer) and DELETE (teardown) signaling through
+  // this caller-supplied proxy. The resource `Location` returned by the proxied
+  // POST is still resolved against the real channel origin so teardown targets
+  // the real resource.
+  proxyUrl?: string;
 }
 
 const RECONNECT_ATTEMPTS = 5; // number of times to attempt reconnecting before giving up and emitting a reconnection failed event, can be configured with WebRTCPlayerOptions.reconnectAttemptsLeft
@@ -123,6 +128,7 @@ export class WebRTCPlayer extends EventEmitter {
   private statsCollector?: StatsCollector;
   private availableTracks: AvailableTrack[] = [];
   private authToken?: string = undefined;
+  private proxyUrl?: string = undefined;
 
   constructor(opts: WebRTCPlayerOptions) {
     super();
@@ -170,6 +176,7 @@ export class WebRTCPlayer extends EventEmitter {
     this.statsCollectionIntervalMs =
       opts.statsCollectionIntervalMs ?? STATS_COLLECTION_INTERVAL;
     this.authToken = opts.authToken;
+    this.proxyUrl = opts.proxyUrl;
     if (opts.vmapUrl) {
       this.csaiManager = new CSAIManager({
         contentVideoElement: this.videoElement,
@@ -558,7 +565,7 @@ export class WebRTCPlayer extends EventEmitter {
         this.onErrorHandler.bind(this),
         this.mediaConstraints,
         this.authKey,
-        { authToken: this.authToken }
+        { authToken: this.authToken, proxyUrl: this.proxyUrl }
       );
     } else if (this.adapterFactory) {
       this.adapter = this.adapterFactory(
@@ -567,7 +574,7 @@ export class WebRTCPlayer extends EventEmitter {
         this.onErrorHandler.bind(this),
         this.mediaConstraints,
         this.authKey,
-        { authToken: this.authToken }
+        { authToken: this.authToken, proxyUrl: this.proxyUrl }
       );
     }
     if (!this.adapter) {
