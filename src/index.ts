@@ -18,7 +18,8 @@ enum Message {
   CONNECT_ERROR = 'connect-error',
   PLAYER_MUTED = 'player-muted',
   PLAYER_UNMUTED = 'player-unmuted',
-  VIDEO_RECOVERY_ATTEMPT = 'video-recovery-attempt'
+  VIDEO_RECOVERY_ATTEMPT = 'video-recovery-attempt',
+  NETWORK_ONLINE_RECONNECT = 'network-online-reconnect'
 }
 
 export interface MediaConstraints {
@@ -47,6 +48,7 @@ interface WebRTCPlayerOptions {
   videoHealthMonitor?: boolean;
   videoHealthPollIntervalMs?: number;
   videoFreezeThresholdMs?: number;
+  reconnectOnOnline?: boolean;
 }
 
 const RECONNECT_ATTEMPTS = 5; // number of times to attempt reconnecting before giving up and emitting a reconnection failed event, can be configured with WebRTCPlayerOptions.reconnectAttemptsLeft
@@ -83,6 +85,8 @@ export class WebRTCPlayer extends EventEmitter {
   private lastFramesDecoded = 0;
   private lastVideoPacketsReceived = 0;
   private videoFreezeElapsedMs = 0;
+  private reconnectOnOnline: boolean;
+  private onlineListener: (() => void) | undefined;
 
   constructor(opts: WebRTCPlayerOptions) {
     super();
@@ -113,6 +117,11 @@ export class WebRTCPlayer extends EventEmitter {
       opts.videoHealthPollIntervalMs ?? VIDEO_HEALTH_POLL_INTERVAL;
     this.videoFreezeThresholdMs =
       opts.videoFreezeThresholdMs ?? VIDEO_FREEZE_THRESHOLD;
+    this.reconnectOnOnline = opts.reconnectOnOnline ?? true;
+    if (this.reconnectOnOnline && typeof window !== 'undefined') {
+      this.onlineListener = this.onNetworkOnline.bind(this);
+      window.addEventListener('online', this.onlineListener);
+    }
     if (opts.vmapUrl) {
       this.csaiManager = new CSAIManager({
         contentVideoElement: this.videoElement,
@@ -175,6 +184,28 @@ export class WebRTCPlayer extends EventEmitter {
       this.reconnectAttemptsLeft = this.configuredReconnectAttempts;
       this.reconnectAttemptsLeft = RECONNECT_ATTEMPTS;
     }
+  }
+
+  private onNetworkOnline() {
+    // The browser regained connectivity. Reconnect immediately rather than
+    // waiting for the reactive connection-failed path, and do NOT spend a
+    // reconnect attempt from the configured retry budget — a network return
+    // is not a failed attempt.
+    if (this.peer && this.peer.connectionState === 'connected') {
+      return;
+    }
+    this.log('Network back online, triggering immediate reconnect');
+    this.emit(Message.NETWORK_ONLINE_RECONNECT);
+    // Defer to the next tick so the caller's own 'online' handlers can run and
+    // so we never reconnect synchronously inside the event dispatch.
+    setTimeout(() => {
+      if (this.peer && this.peer.connectionState === 'connected') {
+        return;
+      }
+      this.peer && this.peer.close();
+      this.videoElement.srcObject = null;
+      this.connect();
+    }, 0);
   }
 
   private onErrorHandler(error: string) {
@@ -431,6 +462,10 @@ export class WebRTCPlayer extends EventEmitter {
   }
 
   destroy() {
+    if (this.onlineListener && typeof window !== 'undefined') {
+      window.removeEventListener('online', this.onlineListener);
+      this.onlineListener = undefined;
+    }
     this.stop();
     this.removeAllListeners();
   }
