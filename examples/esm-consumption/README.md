@@ -29,3 +29,21 @@ If resolution or ESM interop breaks, esbuild fails and the script exits non-zero
 ```
 npm run verify:esm
 ```
+
+## Native Node verification
+
+Bundler consumption alone cannot prove the package loads under **native Node
+ESM** (no bundler — e.g. SSR frameworks that externalize dependencies): named
+imports from CommonJS dependencies only work natively when Node can statically
+detect the exports, and `@eyevinn/csai-manager`'s Parcel-built CJS is not
+detectable. The build rewrites those imports (`scripts/fix-esm-interop.mjs`);
+`verify-esm-native.mjs` is the regression gate. It packs the repo with
+`npm pack`, installs the tarball into a temporary project, and imports the
+package by name with plain Node — both `import` (ESM entry) and `require()`
+(CJS entry).
+
+Requires a prior `npm run build` (it verifies the shipped `dist/` artifacts):
+
+```
+npm run build && npm run verify:esm:native
+```
