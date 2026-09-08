@@ -23,6 +23,7 @@ enum Message {
   INITIAL_CONNECTION_FAILED = 'initial-connection-failed',
   RECONNECTION_FAILED = 'reconnection-failed',
   CONNECT_ERROR = 'connect-error',
+  CONNECTED = 'connected',
   PLAYER_MUTED = 'player-muted',
   PLAYER_UNMUTED = 'player-unmuted',
   VIDEO_RECOVERY_ATTEMPT = 'video-recovery-attempt',
@@ -37,6 +38,17 @@ export interface AvailableTrack {
   id: string; // MediaStreamTrack id
   mid: string | null; // negotiated transceiver mid, if available
   track: MediaStreamTrack;
+}
+
+// Lifecycle of the player's peer connection, exposed through the readonly
+// `readyState` property. Callers can use it (together with the `connected`
+// event) to defer teardown until the connection has been established.
+export enum WebRTCPlayerState {
+  New = 'new',
+  Connecting = 'connecting',
+  Connected = 'connected',
+  Failed = 'failed',
+  Closed = 'closed'
 }
 
 export interface MediaConstraints {
@@ -129,6 +141,7 @@ export class WebRTCPlayer extends EventEmitter {
   private availableTracks: AvailableTrack[] = [];
   private authToken?: string = undefined;
   private proxyUrl?: string = undefined;
+  private connectionState: WebRTCPlayerState = WebRTCPlayerState.New;
 
   constructor(opts: WebRTCPlayerOptions) {
     super();
@@ -199,6 +212,22 @@ export class WebRTCPlayer extends EventEmitter {
     });
   }
 
+  // Current lifecycle state of the peer connection. Read-only; transitions are
+  // driven internally as the connection progresses.
+  get readyState(): WebRTCPlayerState {
+    return this.connectionState;
+  }
+
+  private setConnectionState(state: WebRTCPlayerState) {
+    if (this.connectionState === state) {
+      return;
+    }
+    this.connectionState = state;
+    if (state === WebRTCPlayerState.Connected) {
+      this.emit(Message.CONNECTED);
+    }
+  }
+
   async load(channelUrl: URL, authKey: string | undefined = undefined) {
     this.channelUrl = channelUrl;
     this.authKey = authKey;
@@ -223,6 +252,7 @@ export class WebRTCPlayer extends EventEmitter {
       this.peer && this.peer.close();
 
       if (this.reconnectAttemptsLeft <= 0) {
+        this.setConnectionState(WebRTCPlayerState.Failed);
         this.emit(Message.RECONNECTION_FAILED);
         this.error('Connection failed, reconnecting failed');
         return;
@@ -235,6 +265,7 @@ export class WebRTCPlayer extends EventEmitter {
       this.reconnectAttemptsLeft--;
     } else if (this.peer.connectionState === 'connected') {
       this.log('Connected');
+      this.setConnectionState(WebRTCPlayerState.Connected);
       this.emit(Message.PEER_CONNECTION_CONNECTED);
       this.reconnectAttemptsLeft = this.configuredReconnectAttempts;
       this.reconnectAttemptsLeft = RECONNECT_ATTEMPTS;
@@ -555,6 +586,7 @@ export class WebRTCPlayer extends EventEmitter {
   }
 
   private async connect() {
+    this.setConnectionState(WebRTCPlayerState.Connecting);
     this.setupPeer();
 
     if (this.adapterType !== 'custom') {
@@ -628,6 +660,7 @@ export class WebRTCPlayer extends EventEmitter {
     }
     this.videoElement.srcObject = null;
     this.videoElement.load();
+    this.setConnectionState(WebRTCPlayerState.Closed);
   }
 
   destroy() {
