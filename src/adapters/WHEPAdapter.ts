@@ -21,6 +21,7 @@ export class WHEPAdapter implements Adapter {
   private audio: boolean;
   private video: boolean;
   private mediaConstraints: MediaConstraints;
+  private closed = false;
 
   constructor(
     peer: RTCPeerConnection,
@@ -60,16 +61,33 @@ export class WHEPAdapter implements Adapter {
     return this.localPeer;
   }
 
+  // True once teardown has begun, or once the underlying peer connection has
+  // been closed (e.g. by `destroy()` on the player before the connection was
+  // established). Used to short-circuit any in-flight signaling steps so that
+  // operations on a closed peer do not throw `InvalidStateError`.
+  private isClosed(): boolean {
+    return this.closed || this.localPeer?.signalingState === 'closed';
+  }
+
   async connect(opts?: AdapterConnectOptions) {
     try {
       await this.initSdpExchange();
     } catch (error) {
+      // If teardown happened while the SDP exchange was in flight, the peer is
+      // already closed and the resulting error is expected — swallow it quietly
+      // instead of reporting a connect error.
+      if (this.isClosed()) {
+        return;
+      }
       console.error((error as Error).toString());
       this.onErrorHandler('connecterror');
     }
   }
 
   async disconnect() {
+    this.closed = true;
+    this.waitingForCandidates = false;
+    clearTimeout(this.iceGatheringTimeout);
     if (this.resource) {
       this.log(`Disconnecting by removing resource ${this.resource}`);
       const headers: { Authorization?: string } = {};
@@ -87,12 +105,22 @@ export class WHEPAdapter implements Adapter {
   private async initSdpExchange() {
     clearTimeout(this.iceGatheringTimeout);
 
+    if (this.isClosed()) {
+      return;
+    }
+
     if (this.localPeer && this.whepType === WHEPType.Client) {
       if (this.video)
         this.localPeer.addTransceiver('video', { direction: 'recvonly' });
       if (this.audio)
         this.localPeer.addTransceiver('audio', { direction: 'recvonly' });
       const offer = await this.localPeer.createOffer();
+
+      // Teardown may have happened while awaiting the offer; bail out before
+      // touching the (now closed) peer to avoid an InvalidStateError.
+      if (this.isClosed()) {
+        return;
+      }
 
       // To add NACK in offer we have to add it manually see https://bugs.chromium.org/p/webrtc/issues/detail?id=4543 for details
       if (offer.sdp) {
@@ -115,11 +143,17 @@ export class WHEPAdapter implements Adapter {
     } else {
       if (this.localPeer) {
         const offer = await this.requestOffer();
+        if (this.isClosed()) {
+          return;
+        }
         await this.localPeer.setRemoteDescription({
           type: 'offer',
           sdp: offer
         });
         const answer = await this.localPeer.createAnswer();
+        if (this.isClosed()) {
+          return;
+        }
         try {
           await this.localPeer.setLocalDescription(answer);
           this.waitingForCandidates = true;
@@ -149,6 +183,9 @@ export class WHEPAdapter implements Adapter {
   }
 
   private onIceGatheringStateChange(event: Event) {
+    if (this.isClosed()) {
+      return;
+    }
     if (this.localPeer) {
       this.log('IceGatheringState', this.localPeer.iceGatheringState);
       if (
@@ -165,7 +202,7 @@ export class WHEPAdapter implements Adapter {
   private onIceGatheringTimeout() {
     this.log('IceGatheringTimeout');
 
-    if (!this.waitingForCandidates) {
+    if (this.isClosed() || !this.waitingForCandidates) {
       return;
     }
 
@@ -175,6 +212,10 @@ export class WHEPAdapter implements Adapter {
   private async onDoneWaitingForCandidates() {
     this.waitingForCandidates = false;
     clearTimeout(this.iceGatheringTimeout);
+
+    if (this.isClosed()) {
+      return;
+    }
 
     if (this.whepType === WHEPType.Client) {
       await this.sendOffer();
@@ -227,6 +268,10 @@ export class WHEPAdapter implements Adapter {
       return;
     }
 
+    if (this.isClosed()) {
+      return;
+    }
+
     if (this.whepType === WHEPType.Server && this.resource) {
       const answer = this.localPeer.localDescription;
       if (answer) {
@@ -252,6 +297,10 @@ export class WHEPAdapter implements Adapter {
       return;
     }
 
+    if (this.isClosed()) {
+      return;
+    }
+
     const offer = this.localPeer.localDescription;
 
     if (this.whepType === WHEPType.Client && offer) {
@@ -270,6 +319,11 @@ export class WHEPAdapter implements Adapter {
         this.resource = this.getResouceUrlFromHeaders(response.headers);
         this.log('WHEP Resource', this.resource);
         const answer = await response.text();
+        // Teardown may have happened while awaiting the answer body; do not
+        // apply the remote description to a closed peer.
+        if (this.isClosed()) {
+          return;
+        }
         await this.localPeer.setRemoteDescription({
           type: 'answer',
           sdp: answer
