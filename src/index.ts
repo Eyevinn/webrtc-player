@@ -27,12 +27,23 @@ enum Message {
   PLAYER_UNMUTED = 'player-unmuted',
   VIDEO_RECOVERY_ATTEMPT = 'video-recovery-attempt',
   NETWORK_ONLINE_RECONNECT = 'network-online-reconnect',
-  STATS = 'stats'
+  STATS = 'stats',
+  TRACKS_AVAILABLE = 'tracks-available'
+}
+
+export interface AvailableTrack {
+  kind: 'audio' | 'video';
+  index: number; // slot index within its kind (0-based)
+  id: string; // MediaStreamTrack id
+  mid: string | null; // negotiated transceiver mid, if available
+  track: MediaStreamTrack;
 }
 
 export interface MediaConstraints {
   audioOnly?: boolean;
   videoOnly?: boolean;
+  numAudioTracks?: number;
+  numVideoTracks?: number;
 }
 
 const MediaConstraintsDefaults: MediaConstraints = {
@@ -60,6 +71,8 @@ interface WebRTCPlayerOptions {
   iceGatheringTimeoutMs?: number;
   statsCollection?: boolean;
   statsCollectionIntervalMs?: number;
+  numAudioTracks?: number;
+  numVideoTracks?: number;
 }
 
 const RECONNECT_ATTEMPTS = 5; // number of times to attempt reconnecting before giving up and emitting a reconnection failed event, can be configured with WebRTCPlayerOptions.reconnectAttemptsLeft
@@ -104,6 +117,7 @@ export class WebRTCPlayer extends EventEmitter {
   private statsCollectionEnabled: boolean;
   private statsCollectionIntervalMs = STATS_COLLECTION_INTERVAL;
   private statsCollector?: StatsCollector;
+  private availableTracks: AvailableTrack[] = [];
 
   constructor(opts: WebRTCPlayerOptions) {
     super();
@@ -111,6 +125,12 @@ export class WebRTCPlayer extends EventEmitter {
       ...MediaConstraintsDefaults,
       ...opts.mediaConstraints
     };
+    // Top-level numAudioTracks/numVideoTracks options take precedence over any
+    // value passed via mediaConstraints; both default to a single track.
+    this.mediaConstraints.numAudioTracks =
+      opts.numAudioTracks ?? this.mediaConstraints.numAudioTracks ?? 1;
+    this.mediaConstraints.numVideoTracks =
+      opts.numVideoTracks ?? this.mediaConstraints.numVideoTracks ?? 1;
     this.videoElement = opts.video;
     this.configuredReconnectAttempts =
       opts.reconnectAttemptsLeft ?? RECONNECT_ATTEMPTS;
@@ -318,6 +338,9 @@ export class WebRTCPlayer extends EventEmitter {
     });
     this.peer.onconnectionstatechange = this.onConnectionStateChange.bind(this);
     this.peer.ontrack = this.onTrack.bind(this);
+    // Tracks belong to the current peer connection; a new peer (initial connect
+    // or reconnect) starts with an empty slot map.
+    this.availableTracks = [];
   }
 
   private onTrack(event: RTCTrackEvent) {
@@ -345,6 +368,17 @@ export class WebRTCPlayer extends EventEmitter {
       }
     }
 
+    // Some servers deliver one m-section per track with no stream grouping.
+    // Make sure the fired track still lands on the sink stream in that case.
+    if (event.streams.length === 0 && event.track) {
+      if (!this.videoElement.srcObject) {
+        this.videoElement.srcObject = new MediaStream();
+      }
+      (this.videoElement.srcObject as MediaStream).addTrack(event.track);
+    }
+
+    this.registerTrack(event);
+
     if (
       this.videoHealthMonitorEnabled &&
       event.track.kind === 'video' &&
@@ -352,6 +386,73 @@ export class WebRTCPlayer extends EventEmitter {
     ) {
       this.startVideoHealthMonitor();
     }
+  }
+
+  // Map an incoming track back to a per-kind slot index using the transceiver
+  // identity rather than the m-line order, so re-ordered SDP m-sections do not
+  // shuffle the slots.
+  private registerTrack(event: RTCTrackEvent) {
+    const track = event.track;
+    if (!track || (track.kind !== 'audio' && track.kind !== 'video')) {
+      return;
+    }
+    const kind = track.kind as 'audio' | 'video';
+
+    const transceiver = event.transceiver;
+    const sameKindTransceivers = this.peer
+      .getTransceivers()
+      .filter((t) => (t.receiver.track?.kind ?? '') === kind);
+    let index = transceiver ? sameKindTransceivers.indexOf(transceiver) : -1;
+    if (index < 0) {
+      // Fall back to append order if the transceiver could not be located.
+      index = this.availableTracks.filter((t) => t.kind === kind).length;
+    }
+
+    const existing = this.availableTracks.find(
+      (t) => t.kind === kind && t.index === index
+    );
+    const entry: AvailableTrack = {
+      kind,
+      index,
+      id: track.id,
+      mid: transceiver ? transceiver.mid : null,
+      track
+    };
+    if (existing) {
+      Object.assign(existing, entry);
+    } else {
+      this.availableTracks.push(entry);
+    }
+
+    this.availableTracks.sort((a, b) =>
+      a.kind === b.kind ? a.index - b.index : a.kind < b.kind ? -1 : 1
+    );
+    this.emit(Message.TRACKS_AVAILABLE, this.getAvailableTracks());
+  }
+
+  /**
+   * Returns the list of negotiated media tracks with their per-kind slot index.
+   */
+  getAvailableTracks(): AvailableTrack[] {
+    return this.availableTracks.slice();
+  }
+
+  /**
+   * Select which received audio track is audible without reconnecting. All
+   * received audio tracks stay attached to the sink; non-selected ones are
+   * muted via `track.enabled = false`. Returns true if the slot was found.
+   */
+  selectAudioTrack(index: number): boolean {
+    const audioTracks = this.availableTracks.filter((t) => t.kind === 'audio');
+    const target = audioTracks.find((t) => t.index === index);
+    if (!target) {
+      this.log(`selectAudioTrack: no audio track at slot ${index}`);
+      return false;
+    }
+    for (const t of audioTracks) {
+      t.track.enabled = t.index === index;
+    }
+    return true;
   }
 
   private startVideoHealthMonitor() {
