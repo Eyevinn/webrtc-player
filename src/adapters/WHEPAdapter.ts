@@ -71,7 +71,7 @@ export class WHEPAdapter implements Adapter {
 
   async connect(opts?: AdapterConnectOptions) {
     try {
-      await this.initSdpExchange();
+      await this.initSdpExchange(opts?.timeout ?? DEFAULT_CONNECT_TIMEOUT);
     } catch (error) {
       // If teardown happened while the SDP exchange was in flight, the peer is
       // already closed and the resulting error is expected — swallow it quietly
@@ -102,7 +102,7 @@ export class WHEPAdapter implements Adapter {
     }
   }
 
-  private async initSdpExchange() {
+  private async initSdpExchange(timeout: number = DEFAULT_CONNECT_TIMEOUT) {
     clearTimeout(this.iceGatheringTimeout);
 
     if (this.isClosed()) {
@@ -138,7 +138,7 @@ export class WHEPAdapter implements Adapter {
       this.waitingForCandidates = true;
       this.iceGatheringTimeout = setTimeout(
         this.onIceGatheringTimeout.bind(this),
-        DEFAULT_CONNECT_TIMEOUT
+        timeout
       );
     } else {
       if (this.localPeer) {
@@ -159,7 +159,7 @@ export class WHEPAdapter implements Adapter {
           this.waitingForCandidates = true;
           this.iceGatheringTimeout = setTimeout(
             this.onIceGatheringTimeout.bind(this),
-            DEFAULT_CONNECT_TIMEOUT
+            timeout
           );
         } catch (error) {
           this.log(answer.sdp);
