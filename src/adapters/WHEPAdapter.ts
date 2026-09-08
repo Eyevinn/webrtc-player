@@ -8,10 +8,18 @@ export enum WHEPType {
   Server
 }
 
+export interface WHEPAdapterOptions {
+  // Bearer token injected as `Authorization: Bearer <token>` on the SDP
+  // POST (offer) and DELETE (teardown) signaling requests. The token is
+  // never logged.
+  authToken?: string;
+}
+
 export class WHEPAdapter implements Adapter {
   private localPeer: RTCPeerConnection | undefined;
   private channelUrl: URL;
   private authKey?: string;
+  private authToken?: string;
   private debug = false;
   private whepType: WHEPType;
   private waitingForCandidates = false;
@@ -28,7 +36,8 @@ export class WHEPAdapter implements Adapter {
     channelUrl: URL,
     onError: (error: string) => void,
     mediaConstraints: MediaConstraints,
-    authKey: string | undefined
+    authKey: string | undefined,
+    options?: WHEPAdapterOptions
   ) {
     this.mediaConstraints = mediaConstraints;
     this.channelUrl = channelUrl;
@@ -39,6 +48,7 @@ export class WHEPAdapter implements Adapter {
     }
     this.whepType = WHEPType.Client;
     this.authKey = authKey;
+    this.authToken = options?.authToken;
 
     this.onErrorHandler = onError;
     this.audio = !this.mediaConstraints.videoOnly;
@@ -84,6 +94,17 @@ export class WHEPAdapter implements Adapter {
     }
   }
 
+  // Builds the Authorization header value for signaling requests. A configured
+  // `authToken` is sent as a Bearer credential; otherwise the raw `authKey`
+  // header value is used if present. The returned value is applied to request
+  // headers only and is never passed to any logging path.
+  private getAuthorizationHeader(): string | undefined {
+    if (this.authToken) {
+      return `Bearer ${this.authToken}`;
+    }
+    return this.authKey;
+  }
+
   async disconnect() {
     this.closed = true;
     this.waitingForCandidates = false;
@@ -91,7 +112,8 @@ export class WHEPAdapter implements Adapter {
     if (this.resource) {
       this.log(`Disconnecting by removing resource ${this.resource}`);
       const headers: { Authorization?: string } = {};
-      this.authKey && (headers['Authorization'] = this.authKey);
+      const authorization = this.getAuthorizationHeader();
+      authorization && (headers['Authorization'] = authorization);
       const response = await fetch(this.resource, {
         method: 'DELETE',
         headers
@@ -259,7 +281,8 @@ export class WHEPAdapter implements Adapter {
       const headers: { 'Content-Type': string; Authorization?: string } = {
         'Content-Type': 'application/sdp'
       };
-      this.authKey && (headers['Authorization'] = this.authKey);
+      const authorization = this.getAuthorizationHeader();
+      authorization && (headers['Authorization'] = authorization);
 
       const response = await fetch(this.channelUrl.toString(), {
         method: 'POST',
@@ -295,7 +318,8 @@ export class WHEPAdapter implements Adapter {
         const headers: { 'Content-Type': string; Authorization?: string } = {
           'Content-Type': 'application/sdp'
         };
-        this.authKey && (headers['Authorization'] = this.authKey);
+        const authorization = this.getAuthorizationHeader();
+        authorization && (headers['Authorization'] = authorization);
         const response = await fetch(this.resource, {
           method: 'PATCH',
           headers,
@@ -325,7 +349,8 @@ export class WHEPAdapter implements Adapter {
       const headers: { 'Content-Type': string; Authorization?: string } = {
         'Content-Type': 'application/sdp'
       };
-      this.authKey && (headers['Authorization'] = this.authKey);
+      const authorization = this.getAuthorizationHeader();
+      authorization && (headers['Authorization'] = authorization);
       const response = await fetch(this.channelUrl.toString(), {
         method: 'POST',
         headers,

@@ -1,7 +1,7 @@
 import { Adapter } from './Adapter';
 import { WHPPAdapter } from './WHPPAdapter';
 import { EyevinnAdapter } from './EyevinnAdapter';
-import { WHEPAdapter } from './WHEPAdapter';
+import { WHEPAdapter, WHEPAdapterOptions } from './WHEPAdapter';
 import { MediaConstraints } from '../index';
 
 export interface AdapterFactoryFunction {
@@ -10,7 +10,8 @@ export interface AdapterFactoryFunction {
     channelUrl: URL,
     onError: (error: string) => void,
     mediaConstraints: MediaConstraints,
-    authKey: string | undefined
+    authKey: string | undefined,
+    options?: WHEPAdapterOptions
   ): Adapter;
 }
 
@@ -43,9 +44,17 @@ const WHEPAdapterFactory: AdapterFactoryFunction = (
   channelUrl,
   onError,
   mediaConstraints,
-  authKey
+  authKey,
+  options
 ) => {
-  return new WHEPAdapter(peer, channelUrl, onError, mediaConstraints, authKey);
+  return new WHEPAdapter(
+    peer,
+    channelUrl,
+    onError,
+    mediaConstraints,
+    authKey,
+    options
+  );
 };
 
 const adapters: AdapterMap = {
@@ -60,9 +69,17 @@ export function AdapterFactory(
   channelUrl: URL,
   onError: (error: string) => void,
   mediaConstraints: MediaConstraints,
-  authKey?: string
+  authKey?: string,
+  options?: WHEPAdapterOptions
 ): Adapter {
-  return adapters[type](peer, channelUrl, onError, mediaConstraints, authKey);
+  return adapters[type](
+    peer,
+    channelUrl,
+    onError,
+    mediaConstraints,
+    authKey,
+    options
+  );
 }
 
 export function ListAvailableAdapters(): string[] {
