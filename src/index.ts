@@ -14,6 +14,7 @@ export type {
   MediaTrackStats,
   IceCandidateType
 } from './StatsCollector';
+export type { Adapter, AdapterConnectOptions } from './adapters/Adapter';
 
 enum Message {
   NO_MEDIA = 'no-media',
