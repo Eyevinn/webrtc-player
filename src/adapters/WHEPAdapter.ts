@@ -13,6 +13,12 @@ export interface WHEPAdapterOptions {
   // POST (offer) and DELETE (teardown) signaling requests. The token is
   // never logged.
   authToken?: string;
+  // When set, the WHEP SDP POST (offer) and DELETE (teardown) signaling
+  // requests are routed through this caller-supplied proxy instead of being
+  // sent directly to the channel URL. The `Location` header returned by the
+  // proxied POST is still resolved against the real channel origin so that
+  // teardown targets the real resource, not the proxy.
+  proxyUrl?: string;
 }
 
 export class WHEPAdapter implements Adapter {
@@ -20,6 +26,7 @@ export class WHEPAdapter implements Adapter {
   private channelUrl: URL;
   private authKey?: string;
   private authToken?: string;
+  private proxyUrl?: string;
   private debug = false;
   private whepType: WHEPType;
   private waitingForCandidates = false;
@@ -49,6 +56,7 @@ export class WHEPAdapter implements Adapter {
     this.whepType = WHEPType.Client;
     this.authKey = authKey;
     this.authToken = options?.authToken;
+    this.proxyUrl = options?.proxyUrl;
 
     this.onErrorHandler = onError;
     this.audio = !this.mediaConstraints.videoOnly;
@@ -263,16 +271,26 @@ export class WHEPAdapter implements Adapter {
     }
   }
 
+  // Endpoint the SDP POST (offer) is sent to. When a proxy is configured the
+  // signaling is routed through it; otherwise it goes directly to the channel
+  // URL.
+  private getSignalingUrl(): string {
+    return this.proxyUrl ?? this.channelUrl.toString();
+  }
+
   private getResouceUrlFromHeaders(headers: Headers): string | null {
-    if (headers.get('Location') && headers.get('Location')?.match(/^\//)) {
-      const resourceUrl = new URL(
-        headers.get('Location')!,
-        this.channelUrl.origin
-      );
-      return resourceUrl.toString();
-    } else {
-      return headers.get('Location');
+    const location = headers.get('Location');
+    if (!location) {
+      return null;
     }
+    // A relative Location is resolved against the real channel origin (not the
+    // proxy) so that teardown targets the real resource. An absolute Location
+    // that a proxy rewrote onto the channel origin is likewise already correct.
+    if (location.match(/^\//)) {
+      const resourceUrl = new URL(location, this.channelUrl.origin);
+      return resourceUrl.toString();
+    }
+    return location;
   }
 
   private async requestOffer() {
@@ -284,7 +302,7 @@ export class WHEPAdapter implements Adapter {
       const authorization = this.getAuthorizationHeader();
       authorization && (headers['Authorization'] = authorization);
 
-      const response = await fetch(this.channelUrl.toString(), {
+      const response = await fetch(this.getSignalingUrl(), {
         method: 'POST',
         headers,
         body: ''
@@ -351,7 +369,7 @@ export class WHEPAdapter implements Adapter {
       };
       const authorization = this.getAuthorizationHeader();
       authorization && (headers['Authorization'] = authorization);
-      const response = await fetch(this.channelUrl.toString(), {
+      const response = await fetch(this.getSignalingUrl(), {
         method: 'POST',
         headers,
         body: offer.sdp
