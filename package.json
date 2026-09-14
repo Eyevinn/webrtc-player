@@ -21,7 +21,9 @@
       }
     }
   },
-  "sideEffects": false,
+  "sideEffects": [
+    "./demo/**"
+  ],
   "files": [
     "dist"
   ],

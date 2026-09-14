@@ -1,0 +1,46 @@
+name: Deploy demo to GitHub Pages
+
+on:
+  push:
+    branches: ['main']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: github.repository != 'Eyevinn/webrtc-player'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Build demo
+        run: |
+          npm ci --ignore-scripts
+          npx parcel build --target demo --public-url ./ --no-cache
+          mkdir -p _site/demo
+          cp -r dist-demo/. _site/demo/
+          printf '<!doctype html><meta http-equiv="refresh" content="0; url=demo/">\n' > _site/index.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}demo/
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
