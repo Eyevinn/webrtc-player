@@ -213,6 +213,11 @@ window.addEventListener('DOMContentLoaded', async () => {
         : undefined;
 
     if (video) {
+      if (player) {
+        await player.unload();
+        player.destroy();
+      }
+
       // Pre-create srcObject and call play() NOW while we're inside the user gesture.
       // The browser's autoplay policy ties play() permission to the gesture context;
       // by the time tracks arrive asynchronously, the gesture is long gone.
